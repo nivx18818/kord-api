@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String?
+  username    String   @unique
+  email       String   @unique
+  password    String
+  dateOfBirth DateTime @map("date_of_birth") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile       Profile?
+  Message       Message[]
+  UserServer    UserServer[]
+  ReactsMessage ReactsMessage[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Profile {
+  userId   Int     @id @map("user_id")
+  bio      String?
+  avatar   String?
+  banner   String?
+  xTwitter String? @map("x_twitter")
+  github   String?
+  linkedin String?
+  facebook String?
+  website  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Server {
+  id         Int    @id @default(autoincrement())
+  name       String
+  servername String @unique
+
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  channels Channel[]
+  members  UserServer[]
+  Role     Role[]
+
+  @@index([createdAt])
+  @@map("servers")
+}
+
+model Channel {
+  id     Int           @id @default(autoincrement())
+  name   String
+  type   ChannelType   @default(TEXT)
+  status ChannelStatus @default(PUBLIC)
+  isDM   Boolean       @default(false) @map("is_dm")
+
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  serverId Int       @map("server_id")
+  server   Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([isDM, createdAt, serverId])
+  @@map("channels")
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  name        String
+  permissions Json // e.g., {"manageChannels": true, "kickUsers": false}
+  serverId    Int          @map("server_id")
+  server      Server       @relation(fields: [serverId], references: [id])
+  users       UserServer[]
+
+  @@index([serverId])
+  @@map("roles")
+}
+
+model Message {
+  id      Int  @id @default(autoincrement())
+  content Json
+
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  userId          Int             @map("user_id")
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId       Int             @map("channel_id")
+  channel         Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parentMessageId Int?            @map("parent_message_id")
+  parentMessage   Message?        @relation("Thread", fields: [parentMessageId], references: [id])
+  replies         Message[]       @relation("Thread")
+  attachments     Attachment[]
+  reacts          ReactsMessage[]
+
+  @@index([createdAt, deletedAt, userId, channelId, parentMessageId])
+  @@map("messages")
+}
+
+model Attachment {
+  id   Int     @id @default(autoincrement())
+  url  String
+  type String?
+  size Int?
+
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  messageId Int     @map("message_id")
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("attachments")
+}
+
+model UserServer {
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  userId   Int    @map("user_id")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serverId Int    @map("server_id")
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  roleId   Int?   @map("role_id")
+  role     Role?  @relation(fields: [roleId], references: [id])
+
+  @@id([userId, serverId])
+  @@index([roleId])
+  @@map("user_server")
+}
+
+model ReactsMessage {
+  emoji     String
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  messageId Int     @map("message_id")
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    Int     @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([emoji])
+  @@map("reacts_message")
+}
+
+enum ChannelType {
+  TEXT
+  VOICE
+}
+
+enum ChannelStatus {
+  PUBLIC
+  RESTRICT
+  PRIVATE
+}
