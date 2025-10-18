@@ -5,9 +5,10 @@ import { UsersModule } from './modules/users/users.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ServersModule } from './modules/servers/servers.module';
 import { ChannelsModule } from './modules/channels/channels.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, ProfilesModule, ServersModule, ChannelsModule],
+  imports: [PrismaModule, UsersModule, ProfilesModule, ServersModule, ChannelsModule, RolesModule],
   controllers: [AppController],
   providers: [],
 })
