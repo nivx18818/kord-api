@@ -57,7 +57,7 @@ model Server {
 
   channels Channel[]
   members  UserServer[]
-  Role     Role[]
+  roles    Role[]
 
   @@index([createdAt])
   @@map("servers")
@@ -82,12 +82,13 @@ model Channel {
 }
 
 model Role {
-  id          Int          @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   name        String
   permissions Json // e.g., {"manageChannels": true, "kickUsers": false}
-  serverId    Int          @map("server_id")
-  server      Server       @relation(fields: [serverId], references: [id])
-  users       UserServer[]
+
+  serverId Int          @map("server_id")
+  server   Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  users    UserServer[]
 
   @@index([serverId])
   @@map("roles")
@@ -106,7 +107,7 @@ model Message {
   channelId       Int             @map("channel_id")
   channel         Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
   parentMessageId Int?            @map("parent_message_id")
-  parentMessage   Message?        @relation("Thread", fields: [parentMessageId], references: [id])
+  parentMessage   Message?        @relation("Thread", fields: [parentMessageId], references: [id], onDelete: SetNull)
   replies         Message[]       @relation("Thread")
   attachments     Attachment[]
   reacts          ReactsMessage[]
@@ -140,7 +141,7 @@ model UserServer {
   serverId Int    @map("server_id")
   server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
   roleId   Int?   @map("role_id")
-  role     Role?  @relation(fields: [roleId], references: [id])
+  role     Role?  @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
   @@id([userId, serverId])
   @@index([roleId])
