@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,7 +19,10 @@ export class UsersService {
         data: createUserDto,
       });
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('Username or email already exists');
       }
       throw error;
@@ -35,32 +39,15 @@ export class UsersService {
 
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
-      where: { id },
       include: {
         profile: true,
       },
+      where: { id },
     });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
-  }
-
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    try {
-      return await this.prisma.user.update({
-        where: { id },
-        data: updateUserDto,
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
-      if (error.code === 'P2002') {
-        throw new ConflictException('Username or email already exists');
-      }
-      throw error;
-    }
   }
 
   async remove(id: number) {
@@ -69,8 +56,34 @@ export class UsersService {
         where: { id },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`User with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      return await this.prisma.user.update({
+        data: updateUserDto,
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Username or email already exists');
       }
       throw error;
     }

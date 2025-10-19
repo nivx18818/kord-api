@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -21,7 +22,10 @@ export class ProfilesService {
         },
       });
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('Profile for this user already exists');
       }
       throw error;
@@ -37,29 +41,12 @@ export class ProfilesService {
   }
 
   async findOne(userId: number) {
-    const profile = await this.prisma.profile.findUnique({
-      where: { userId },
+    return await this.prisma.profile.findUnique({
       include: {
         user: true,
       },
+      where: { userId },
     });
-  }
-
-  async update(userId: number, updateProfileDto: UpdateProfileDto) {
-    try {
-      return await this.prisma.profile.update({
-        where: { userId },
-        data: updateProfileDto,
-        include: {
-          user: true,
-        },
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Profile for user ID ${userId} not found`);
-      }
-      throw error;
-    }
   }
 
   async remove(userId: number) {
@@ -68,7 +55,30 @@ export class ProfilesService {
         where: { userId },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Profile for user ID ${userId} not found`);
+      }
+      throw error;
+    }
+  }
+
+  async update(userId: number, updateProfileDto: UpdateProfileDto) {
+    try {
+      return await this.prisma.profile.update({
+        data: updateProfileDto,
+        include: {
+          user: true,
+        },
+        where: { userId },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Profile for user ID ${userId} not found`);
       }
       throw error;

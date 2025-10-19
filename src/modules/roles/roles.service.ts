@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -6,17 +7,17 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  constructor(private readonly prisma: PrismaService) {}
-
   private readonly includeOptions = {
     server: true,
     users: {
       include: {
-        user: true,
         server: true,
+        user: true,
       },
     },
   };
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createRoleDto: CreateRoleDto) {
     try {
@@ -25,7 +26,10 @@ export class RolesService {
         include: this.includeOptions,
       });
     } catch (error) {
-      if (error.code === 'P2003') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
         throw new NotFoundException('Server not found');
       }
       throw error;
@@ -40,28 +44,13 @@ export class RolesService {
 
   async findOne(id: number) {
     const role = await this.prisma.role.findUnique({
-      where: { id },
       include: this.includeOptions,
+      where: { id },
     });
     if (!role) {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
     return role;
-  }
-
-  async update(id: number, updateRoleDto: UpdateRoleDto) {
-    try {
-      return await this.prisma.role.update({
-        where: { id },
-        data: updateRoleDto,
-        include: this.includeOptions,
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Role with ID ${id} not found`);
-      }
-      throw error;
-    }
   }
 
   async remove(id: number) {
@@ -70,7 +59,28 @@ export class RolesService {
         where: { id },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Role with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
+
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
+    try {
+      return await this.prisma.role.update({
+        data: updateRoleDto,
+        include: this.includeOptions,
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Role with ID ${id} not found`);
       }
       throw error;

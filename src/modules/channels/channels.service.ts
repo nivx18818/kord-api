@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
@@ -6,22 +7,22 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 
 @Injectable()
 export class ChannelsService {
-  constructor(private readonly prisma: PrismaService) {}
-
   private readonly includeOptions = {
-    server: true,
     messages: {
       include: {
-        user: true,
         attachments: true,
         reacts: {
           include: {
             user: true,
           },
         },
+        user: true,
       },
     },
+    server: true,
   };
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createChannelDto: CreateChannelDto) {
     try {
@@ -30,7 +31,10 @@ export class ChannelsService {
         include: this.includeOptions,
       });
     } catch (error) {
-      if (error.code === 'P2003') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
         throw new NotFoundException('Server not found');
       }
       throw error;
@@ -45,28 +49,13 @@ export class ChannelsService {
 
   async findOne(id: number) {
     const channel = await this.prisma.channel.findUnique({
-      where: { id },
       include: this.includeOptions,
+      where: { id },
     });
     if (!channel) {
       throw new NotFoundException(`Channel with ID ${id} not found`);
     }
     return channel;
-  }
-
-  async update(id: number, updateChannelDto: UpdateChannelDto) {
-    try {
-      return await this.prisma.channel.update({
-        where: { id },
-        data: updateChannelDto,
-        include: this.includeOptions,
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Channel with ID ${id} not found`);
-      }
-      throw error;
-    }
   }
 
   async remove(id: number) {
@@ -75,7 +64,28 @@ export class ChannelsService {
         where: { id },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Channel with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
+
+  async update(id: number, updateChannelDto: UpdateChannelDto) {
+    try {
+      return await this.prisma.channel.update({
+        data: updateChannelDto,
+        include: this.includeOptions,
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Channel with ID ${id} not found`);
       }
       throw error;

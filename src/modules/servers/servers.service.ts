@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServerDto } from './dto/create-server.dto';
@@ -10,18 +11,18 @@ import { UpdateServerDto } from './dto/update-server.dto';
 
 @Injectable()
 export class ServersService {
-  constructor(private readonly prisma: PrismaService) {}
-
   private readonly includeOptions = {
     channels: true,
     members: {
       include: {
-        user: true,
         role: true,
+        user: true,
       },
     },
     roles: true,
   };
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createServerDto: CreateServerDto) {
     try {
@@ -30,7 +31,10 @@ export class ServersService {
         include: this.includeOptions,
       });
     } catch (error) {
-      if (error.code === 'P2002') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         throw new ConflictException('Servername already exists');
       }
       throw error;
@@ -45,31 +49,13 @@ export class ServersService {
 
   async findOne(id: number) {
     const server = await this.prisma.server.findUnique({
-      where: { id },
       include: this.includeOptions,
+      where: { id },
     });
     if (!server) {
       throw new NotFoundException(`Server with ID ${id} not found`);
     }
     return server;
-  }
-
-  async update(id: number, updateServerDto: UpdateServerDto) {
-    try {
-      return await this.prisma.server.update({
-        where: { id },
-        data: updateServerDto,
-        include: this.includeOptions,
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException(`Server with ID ${id} not found`);
-      }
-      if (error.code === 'P2002') {
-        throw new ConflictException('Servername already exists');
-      }
-      throw error;
-    }
   }
 
   async remove(id: number) {
@@ -78,8 +64,35 @@ export class ServersService {
         where: { id },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Server with ID ${id} not found`);
+      }
+      throw error;
+    }
+  }
+
+  async update(id: number, updateServerDto: UpdateServerDto) {
+    try {
+      return await this.prisma.server.update({
+        data: updateServerDto,
+        include: this.includeOptions,
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Server with ID ${id} not found`);
+      }
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Servername already exists');
       }
       throw error;
     }

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -6,30 +7,30 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly prisma: PrismaService) {}
-
   private readonly includeOptions = {
-    user: true,
+    attachments: true,
     channel: true,
     parentMessage: true,
-    replies: {
+    reacts: {
       include: {
         user: true,
+      },
+    },
+    replies: {
+      include: {
         attachments: true,
         reacts: {
           include: {
             user: true,
           },
         },
-      },
-    },
-    attachments: true,
-    reacts: {
-      include: {
         user: true,
       },
     },
+    user: true,
   };
+
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createMessageDto: CreateMessageDto) {
     try {
@@ -38,7 +39,10 @@ export class MessagesService {
         include: this.includeOptions,
       });
     } catch (error) {
-      if (error.code === 'P2003') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
         throw new NotFoundException('User or channel not found');
       }
       throw error;
@@ -47,20 +51,20 @@ export class MessagesService {
 
   async findAll() {
     return await this.prisma.message.findMany({
+      include: this.includeOptions,
       where: {
         deletedAt: null,
       },
-      include: this.includeOptions,
     });
   }
 
   async findOne(id: number) {
     const message = await this.prisma.message.findUnique({
-      where: {
-        id,
-        deletedAt: null,
-      },
       include: this.includeOptions,
+      where: {
+        deletedAt: null,
+        id,
+      },
     });
     if (!message) {
       throw new NotFoundException(`Message with ID ${id} not found`);
@@ -68,38 +72,44 @@ export class MessagesService {
     return message;
   }
 
-  async update(id: number, updateMessageDto: UpdateMessageDto) {
+  async remove(id: number) {
     try {
       return await this.prisma.message.update({
-        where: {
-          id,
-          deletedAt: null,
+        data: {
+          deletedAt: new Date(),
         },
-        data: updateMessageDto,
         include: this.includeOptions,
+        where: {
+          deletedAt: null,
+          id,
+        },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Message with ID ${id} not found`);
       }
       throw error;
     }
   }
 
-  async remove(id: number) {
+  async update(id: number, updateMessageDto: UpdateMessageDto) {
     try {
       return await this.prisma.message.update({
-        where: {
-          id,
-          deletedAt: null,
-        },
-        data: {
-          deletedAt: new Date(),
-        },
+        data: updateMessageDto,
         include: this.includeOptions,
+        where: {
+          deletedAt: null,
+          id,
+        },
       });
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException(`Message with ID ${id} not found`);
       }
       throw error;
