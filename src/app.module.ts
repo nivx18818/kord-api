@@ -7,9 +7,10 @@ import { ServersModule } from './modules/servers/servers.module';
 import { ChannelsModule } from './modules/channels/channels.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, ProfilesModule, ServersModule, ChannelsModule, RolesModule, MessagesModule],
+  imports: [PrismaModule, UsersModule, ProfilesModule, ServersModule, ChannelsModule, RolesModule, MessagesModule, AttachmentsModule],
   controllers: [AppController],
   providers: [],
 })
