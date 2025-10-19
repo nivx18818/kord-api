@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateUserDto {
   @IsOptional()
