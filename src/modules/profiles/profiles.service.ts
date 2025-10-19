@@ -16,10 +16,10 @@ export class ProfilesService {
   async create(createProfileDto: CreateProfileDto) {
     try {
       return await this.prisma.profile.create({
-        data: createProfileDto,
         include: {
           user: true,
         },
+        data: createProfileDto,
       });
     } catch (error) {
       if (
@@ -68,11 +68,11 @@ export class ProfilesService {
   async update(userId: number, updateProfileDto: UpdateProfileDto) {
     try {
       return await this.prisma.profile.update({
-        data: updateProfileDto,
         include: {
           user: true,
         },
         where: { userId },
+        data: updateProfileDto,
       });
     } catch (error) {
       if (

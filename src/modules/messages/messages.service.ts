@@ -35,8 +35,8 @@ export class MessagesService {
   async create(createMessageDto: CreateMessageDto) {
     try {
       return await this.prisma.message.create({
-        data: createMessageDto,
         include: this.includeOptions,
+        data: createMessageDto,
       });
     } catch (error) {
       if (
@@ -75,13 +75,13 @@ export class MessagesService {
   async remove(id: number) {
     try {
       return await this.prisma.message.update({
-        data: {
-          deletedAt: new Date(),
-        },
         include: this.includeOptions,
         where: {
           deletedAt: null,
           id,
+        },
+        data: {
+          deletedAt: new Date(),
         },
       });
     } catch (error) {
@@ -98,12 +98,12 @@ export class MessagesService {
   async update(id: number, updateMessageDto: UpdateMessageDto) {
     try {
       return await this.prisma.message.update({
-        data: updateMessageDto,
         include: this.includeOptions,
         where: {
           deletedAt: null,
           id,
         },
+        data: updateMessageDto,
       });
     } catch (error) {
       if (

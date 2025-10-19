@@ -27,8 +27,8 @@ export class ChannelsService {
   async create(createChannelDto: CreateChannelDto) {
     try {
       return await this.prisma.channel.create({
-        data: createChannelDto,
         include: this.includeOptions,
+        data: createChannelDto,
       });
     } catch (error) {
       if (
@@ -77,9 +77,9 @@ export class ChannelsService {
   async update(id: number, updateChannelDto: UpdateChannelDto) {
     try {
       return await this.prisma.channel.update({
-        data: updateChannelDto,
         include: this.includeOptions,
         where: { id },
+        data: updateChannelDto,
       });
     } catch (error) {
       if (

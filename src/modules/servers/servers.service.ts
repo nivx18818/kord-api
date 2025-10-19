@@ -27,8 +27,8 @@ export class ServersService {
   async create(createServerDto: CreateServerDto) {
     try {
       return await this.prisma.server.create({
-        data: createServerDto,
         include: this.includeOptions,
+        data: createServerDto,
       });
     } catch (error) {
       if (
@@ -77,9 +77,9 @@ export class ServersService {
   async update(id: number, updateServerDto: UpdateServerDto) {
     try {
       return await this.prisma.server.update({
-        data: updateServerDto,
         include: this.includeOptions,
         where: { id },
+        data: updateServerDto,
       });
     } catch (error) {
       if (

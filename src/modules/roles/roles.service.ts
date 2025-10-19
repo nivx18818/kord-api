@@ -22,8 +22,8 @@ export class RolesService {
   async create(createRoleDto: CreateRoleDto) {
     try {
       return await this.prisma.role.create({
-        data: createRoleDto,
         include: this.includeOptions,
+        data: createRoleDto,
       });
     } catch (error) {
       if (
@@ -72,9 +72,9 @@ export class RolesService {
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     try {
       return await this.prisma.role.update({
-        data: updateRoleDto,
         include: this.includeOptions,
         where: { id },
+        data: updateRoleDto,
       });
     } catch (error) {
       if (

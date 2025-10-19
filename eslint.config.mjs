@@ -127,8 +127,21 @@ export default defineConfig([
           destructuredObjects: true,
           styledComponents: true,
           ignorePattern: [],
-          useConfigurationIf: {},
-          groups: [],
+          useConfigurationIf: {
+            allNamesMatchPattern:
+              '^(select|from|model|include|relations|join|where|groupBy|having|orderBy|sort|take|skip|data)$',
+          },
+          groups: [
+            'select',
+            'from-model',
+            'include-relations-join',
+            'where',
+            'groupBy',
+            'having',
+            'orderBy-sort',
+            'take-skip',
+            'data',
+          ],
           customGroups: [
             {
               groupName: 'select',
@@ -164,6 +177,16 @@ export default defineConfig([
               groupName: 'orderBy-sort',
               selector: 'property',
               elementNamePattern: '^(orderBy|sort)$',
+            },
+            {
+              groupName: 'take-skip',
+              selector: 'property',
+              elementNamePattern: '^(take|skip)$',
+            },
+            {
+              groupName: 'data',
+              selector: 'property',
+              elementNamePattern: '^data$',
             },
           ],
         },
