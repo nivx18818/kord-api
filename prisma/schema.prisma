@@ -21,8 +21,8 @@ model User {
 
   profile       Profile?
   Message       Message[]
-  UserServer    UserServer[]
-  ReactsMessage ReactsMessage[]
+  UserServer    Membership[]
+  ReactsMessage Reaction[]
 
   @@index([createdAt])
   @@map("users")
@@ -56,7 +56,7 @@ model Server {
   updatedAt DateTime? @updatedAt @map("updated_at")
 
   channels Channel[]
-  members  UserServer[]
+  members  Membership[]
   roles    Role[]
 
   @@index([createdAt])
@@ -88,7 +88,7 @@ model Role {
 
   serverId Int          @map("server_id")
   server   Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  users    UserServer[]
+  users    Membership[]
 
   @@index([serverId])
   @@map("roles")
@@ -110,7 +110,7 @@ model Message {
   parentMessage   Message?        @relation("Thread", fields: [parentMessageId], references: [id], onDelete: SetNull)
   replies         Message[]       @relation("Thread")
   attachments     Attachment[]
-  reacts          ReactsMessage[]
+  reacts          Reaction[]
 
   @@index([createdAt, deletedAt, userId, channelId, parentMessageId])
   @@map("messages")
@@ -132,7 +132,7 @@ model Attachment {
   @@map("attachments")
 }
 
-model UserServer {
+model Membership {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
@@ -145,10 +145,10 @@ model UserServer {
 
   @@id([userId, serverId])
   @@index([roleId])
-  @@map("user_server")
+  @@map("memberships")
 }
 
-model ReactsMessage {
+model Reaction {
   emoji     String
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
@@ -160,7 +160,7 @@ model ReactsMessage {
 
   @@id([messageId, userId])
   @@index([emoji])
-  @@map("reacts_message")
+  @@map("reactions")
 }
 
 enum ChannelType {
