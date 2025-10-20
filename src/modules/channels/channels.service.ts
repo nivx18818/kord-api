@@ -58,10 +58,12 @@ export class ChannelsService {
     return channel;
   }
 
-  async remove(id: number) {
+  async update(id: number, updateChannelDto: UpdateChannelDto) {
     try {
-      return await this.prisma.channel.delete({
+      return await this.prisma.channel.update({
+        include: this.includeOptions,
         where: { id },
+        data: updateChannelDto,
       });
     } catch (error) {
       if (
@@ -74,12 +76,10 @@ export class ChannelsService {
     }
   }
 
-  async update(id: number, updateChannelDto: UpdateChannelDto) {
+  async remove(id: number) {
     try {
-      return await this.prisma.channel.update({
-        include: this.includeOptions,
+      return await this.prisma.channel.delete({
         where: { id },
-        data: updateChannelDto,
       });
     } catch (error) {
       if (

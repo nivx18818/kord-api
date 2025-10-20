@@ -45,17 +45,6 @@ export class MembershipsService {
     });
   }
 
-  async remove(userId: number, serverId: number) {
-    return this.prisma.membership.delete({
-      where: {
-        userId_serverId: {
-          serverId,
-          userId,
-        },
-      },
-    });
-  }
-
   async update(
     userId: number,
     serverId: number,
@@ -74,6 +63,17 @@ export class MembershipsService {
         },
       },
       data: updateMembershipDto,
+    });
+  }
+
+  async remove(userId: number, serverId: number) {
+    return this.prisma.membership.delete({
+      where: {
+        userId_serverId: {
+          serverId,
+          userId,
+        },
+      },
     });
   }
 }

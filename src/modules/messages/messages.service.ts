@@ -72,7 +72,7 @@ export class MessagesService {
     return message;
   }
 
-  async remove(id: number) {
+  async update(id: number, updateMessageDto: UpdateMessageDto) {
     try {
       return await this.prisma.message.update({
         include: this.includeOptions,
@@ -80,9 +80,7 @@ export class MessagesService {
           deletedAt: null,
           id,
         },
-        data: {
-          deletedAt: new Date(),
-        },
+        data: updateMessageDto,
       });
     } catch (error) {
       if (
@@ -95,7 +93,7 @@ export class MessagesService {
     }
   }
 
-  async update(id: number, updateMessageDto: UpdateMessageDto) {
+  async remove(id: number) {
     try {
       return await this.prisma.message.update({
         include: this.includeOptions,
@@ -103,7 +101,9 @@ export class MessagesService {
           deletedAt: null,
           id,
         },
-        data: updateMessageDto,
+        data: {
+          deletedAt: new Date(),
+        },
       });
     } catch (error) {
       if (

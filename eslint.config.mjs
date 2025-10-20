@@ -41,7 +41,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['**/src/modules/*/*.controller.ts'],
+    files: ['**/src/modules/*/*.{controller,service}.ts'],
     rules: {
       'perfectionist/sort-classes': [
         'error',

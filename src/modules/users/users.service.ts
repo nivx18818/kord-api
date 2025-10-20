@@ -50,22 +50,6 @@ export class UsersService {
     return user;
   }
 
-  async remove(id: number) {
-    try {
-      return await this.prisma.user.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
-      }
-      throw error;
-    }
-  }
-
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       return await this.prisma.user.update({
@@ -84,6 +68,22 @@ export class UsersService {
         error.code === 'P2002'
       ) {
         throw new ConflictException('Username or email already exists');
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: number) {
+    try {
+      return await this.prisma.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`User with ID ${id} not found`);
       }
       throw error;
     }

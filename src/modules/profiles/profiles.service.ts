@@ -49,10 +49,14 @@ export class ProfilesService {
     });
   }
 
-  async remove(userId: number) {
+  async update(userId: number, updateProfileDto: UpdateProfileDto) {
     try {
-      return await this.prisma.profile.delete({
+      return await this.prisma.profile.update({
+        include: {
+          user: true,
+        },
         where: { userId },
+        data: updateProfileDto,
       });
     } catch (error) {
       if (
@@ -65,14 +69,10 @@ export class ProfilesService {
     }
   }
 
-  async update(userId: number, updateProfileDto: UpdateProfileDto) {
+  async remove(userId: number) {
     try {
-      return await this.prisma.profile.update({
-        include: {
-          user: true,
-        },
+      return await this.prisma.profile.delete({
         where: { userId },
-        data: updateProfileDto,
       });
     } catch (error) {
       if (

@@ -42,17 +42,6 @@ export class ReactionsService {
     });
   }
 
-  async remove(messageId: number, userId: number) {
-    return this.prisma.reaction.delete({
-      where: {
-        messageId_userId: {
-          messageId,
-          userId,
-        },
-      },
-    });
-  }
-
   async update(
     messageId: number,
     userId: number,
@@ -70,6 +59,17 @@ export class ReactionsService {
         },
       },
       data: updateReactionDto,
+    });
+  }
+
+  async remove(messageId: number, userId: number) {
+    return this.prisma.reaction.delete({
+      where: {
+        messageId_userId: {
+          messageId,
+          userId,
+        },
+      },
     });
   }
 }

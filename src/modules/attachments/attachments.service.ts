@@ -47,10 +47,12 @@ export class AttachmentsService {
     return attachment;
   }
 
-  async remove(id: number) {
+  async update(id: number, updateAttachmentDto: UpdateAttachmentDto) {
     try {
-      return await this.prisma.attachment.delete({
+      return await this.prisma.attachment.update({
+        include: this.includeOptions,
         where: { id },
+        data: updateAttachmentDto,
       });
     } catch (error) {
       if (
@@ -63,12 +65,10 @@ export class AttachmentsService {
     }
   }
 
-  async update(id: number, updateAttachmentDto: UpdateAttachmentDto) {
+  async remove(id: number) {
     try {
-      return await this.prisma.attachment.update({
-        include: this.includeOptions,
+      return await this.prisma.attachment.delete({
         where: { id },
-        data: updateAttachmentDto,
       });
     } catch (error) {
       if (

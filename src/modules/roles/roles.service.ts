@@ -53,10 +53,12 @@ export class RolesService {
     return role;
   }
 
-  async remove(id: number) {
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
     try {
-      return await this.prisma.role.delete({
+      return await this.prisma.role.update({
+        include: this.includeOptions,
         where: { id },
+        data: updateRoleDto,
       });
     } catch (error) {
       if (
@@ -69,12 +71,10 @@ export class RolesService {
     }
   }
 
-  async update(id: number, updateRoleDto: UpdateRoleDto) {
+  async remove(id: number) {
     try {
-      return await this.prisma.role.update({
-        include: this.includeOptions,
+      return await this.prisma.role.delete({
         where: { id },
-        data: updateRoleDto,
       });
     } catch (error) {
       if (

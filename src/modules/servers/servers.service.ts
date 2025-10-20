@@ -58,22 +58,6 @@ export class ServersService {
     return server;
   }
 
-  async remove(id: number) {
-    try {
-      return await this.prisma.server.delete({
-        where: { id },
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException(`Server with ID ${id} not found`);
-      }
-      throw error;
-    }
-  }
-
   async update(id: number, updateServerDto: UpdateServerDto) {
     try {
       return await this.prisma.server.update({
@@ -93,6 +77,22 @@ export class ServersService {
         error.code === 'P2002'
       ) {
         throw new ConflictException('Servername already exists');
+      }
+      throw error;
+    }
+  }
+
+  async remove(id: number) {
+    try {
+      return await this.prisma.server.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Server with ID ${id} not found`);
       }
       throw error;
     }
