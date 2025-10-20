@@ -9,6 +9,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { ServersModule } from './modules/servers/servers.module';
 import { UsersModule } from './modules/users/users.module';
+import { MembershipsModule } from './modules/memberships/memberships.module';
 
 @Module({
   controllers: [AppController],
@@ -21,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
     RolesModule,
     MessagesModule,
     AttachmentsModule,
+    MembershipsModule,
   ],
   providers: [],
 })
