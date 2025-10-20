@@ -10,6 +10,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { ServersModule } from './modules/servers/servers.module';
 import { UsersModule } from './modules/users/users.module';
 import { MembershipsModule } from './modules/memberships/memberships.module';
+import { ReactionsModule } from './modules/reactions/reactions.module';
 
 @Module({
   controllers: [AppController],
@@ -23,6 +24,7 @@ import { MembershipsModule } from './modules/memberships/memberships.module';
     MessagesModule,
     AttachmentsModule,
     MembershipsModule,
+    ReactionsModule,
   ],
   providers: [],
 })
