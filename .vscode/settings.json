@@ -10,6 +10,7 @@
     "*.middleware.ts": "nest-middleware",
     "*.resolver.ts": "nest",
     "*.gateway.ts": "nest",
-    "*.decorator.ts": "nest-decorator",
-  }
+    "*.decorator.ts": "nest-decorator"
+  },
+  "material-icon-theme.activeIconPack": "nest"
 }
