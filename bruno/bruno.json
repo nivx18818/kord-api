@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "name": "kord",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "size": 0.00010013580322265625,
+  "filesCount": 2,
+  "presets": {
+    "requestType": "http",
+    "requestUrl": ""
+  }
+}

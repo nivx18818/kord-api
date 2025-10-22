@@ -1,0 +1,23 @@
+meta {
+  name: delete
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{base_url}}/users/{{userId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 or 204 for successful deletion", function() {
+    expect([200, 204]).to.include(res.getStatus());
+  });
+  
+  test("Handle not found error for invalid ID", function() {
+    if (res.getStatus() === 404) {
+      expect(res.getBody().message).to.contain('not found');
+    }
+  });
+}
