@@ -16,7 +16,10 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     try {
       return await this.prisma.user.create({
-        data: createUserDto,
+        data: {
+          ...createUserDto,
+          dateOfBirth: new Date(createUserDto.dateOfBirth),
+        },
       });
     } catch (error) {
       if (
@@ -54,7 +57,11 @@ export class UsersService {
     try {
       return await this.prisma.user.update({
         where: { id },
-        data: updateUserDto,
+        data: {
+          ...updateUserDto,
+          dateOfBirth:
+            updateUserDto.dateOfBirth && new Date(updateUserDto.dateOfBirth),
+        },
       });
     } catch (error) {
       if (
