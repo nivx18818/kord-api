@@ -1,0 +1,31 @@
+meta {
+  name: duplicate-email
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Jane Doe",
+    "username": "janedoe",
+    "email": "john@example.com",
+    "password": "securepass123",
+    "dateOfBirth": "1992-02-02"
+  }
+}
+
+tests {
+  test("Status should be 409 for duplicate email", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+  
+  test("Response should indicate conflict for email", function () {
+    expect(res.getBody().message).to.contain("already exists");
+  });
+}

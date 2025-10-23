@@ -1,0 +1,32 @@
+meta {
+  name: missing-date-of-birth
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "password": "securepass123"
+  }
+}
+
+tests {
+  test("Status should be 400 for missing dateOfBirth", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Response should indicate validation error for dateOfBirth", function () {
+    expect(res.getBody().message.some(
+      (msg) => msg.includes("dateOfBirth");
+    )).to.be.true;
+  });
+}

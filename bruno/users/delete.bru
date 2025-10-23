@@ -1,7 +1,7 @@
 meta {
   name: delete
   type: http
-  seq: 4
+  seq: 6
 }
 
 delete {
@@ -11,13 +11,13 @@ delete {
 }
 
 tests {
-  test("Status should be 200 or 204 for successful deletion", function() {
+  test("Status should be 200 or 204 for successful deletion", function () {
     expect([200, 204]).to.include(res.getStatus());
   });
-  
-  test("Handle not found error for invalid ID", function() {
+
+  test("Handle not found error for invalid ID", function () {
     if (res.getStatus() === 404) {
-      expect(res.getBody().message).to.contain('not found');
+      expect(res.getBody().message).to.contain("not found");
     }
   });
 }

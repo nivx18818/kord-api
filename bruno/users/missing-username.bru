@@ -1,0 +1,32 @@
+meta {
+  name: missing-username
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{base_url}}/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "securepass123",
+    "dateOfBirth": "1990-01-01"
+  }
+}
+
+tests {
+  test("Status should be 400 for missing username", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Response should indicate validation error for username", function () {
+    expect(res.getBody().message.some(
+      (msg) => msg.includes("username")
+    )).to.be.true;
+  });
+}

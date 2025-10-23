@@ -20,22 +20,18 @@ body:json {
   }
 }
 
+script:post-response {
+  bru.setVar("userId", res.getBody().id);
+}
+
 tests {
-  test("Status should be 201 for successful creation", function() {
+  test("Status should be 201 for successful creation", function () {
     expect(res.getStatus()).to.equal(201);
   });
-
-  test("Response should include user ID and details", function() {
-    expect(res.getBody()).to.have.property('id');
-    expect(res.getBody().username).to.equal('johndoe');
-    expect(res.getBody().email).toBe('john@example.com');
+  
+  test("Response should include user ID and details", function () {
+    expect(res.getBody()).to.have.property("id");
+    expect(res.getBody().username).to.equal("johndoe");
+    expect(res.getBody().email).to.equal("john@example.com");
   });
-
-  test("Handle conflict error for duplicate username/email", function() {
-    if (res.getStatus() === 409) {
-      expect(res.getBody().message).toContain('already exists');
-    }
-  });
-
-  bru.setVar("userId", res.getBody().id);
 }

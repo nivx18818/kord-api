@@ -1,7 +1,7 @@
 meta {
   name: update
   type: http
-  seq: 3
+  seq: 5
 }
 
 patch {
@@ -24,20 +24,20 @@ tests {
   test("Status should be 200 for successful update", function() {
     expect(res.getStatus()).to.equal(200);
   });
-  
+
   test("Response should include updated user details", function() {
     expect(res.getBody()).to.have.property('id');
     expect(res.getBody()).to.have.property('username');
     expect(res.getBody()).to.have.property('email');
     expect(res.getBody()).to.have.property('name');
   });
-  
+
   test("Updated user should reflect changes", function() {
     expect(res.getBody().id).to.equal(bru.getVar("userId"));
     expect(res.getBody().name).to.equal('Updated John Doe');
     expect(res.getBody().email).to.equal('updated@example.com');
   });
-  
+
   test("Handle not found error for invalid ID", function() {
     if (res.getStatus() === 404) {
       expect(res.getBody().message).to.contain('not found');
