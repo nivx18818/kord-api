@@ -8,26 +8,26 @@ This document provides checklists for the Kord app (a simple Discord-like chat a
 
 Checklists use:
 
-- [x] for assumed implemented (from code).
+- [x] for implemented.
 - [ ] for pending or planned.
 
 #### 1. Implemented/Current Features
 
 These are derived from the existing NestJS/Prisma structure (e.g., CRUD for users, servers, messages) and basic plans.
 
-- [x] User registration and profile creation (auto-linked one-to-one).
-- [x] Basic CRUD for users (create, read, update, delete).
-- [x] Basic CRUD for profiles (bio, avatar, social links).
-- [x] Server creation and management (name, servername unique).
-- [x] Channel management (text/voice types, public/restrict/private status, DM flag).
-- [x] Membership system (users join servers with roles).
-- [x] Role system (permissions as JSON, e.g., manage channels).
-- [x] Messaging (text content as JSON, threading via parentMessageId, soft deletes).
-- [x] Attachments for messages (URL, type, size).
-- [x] Reactions for messages (emoji, unique per user-message).
-- [x] Prisma migrations and schema (cascading deletes, enums for types/status).
-- [x] Basic testing (unit specs for services/controllers, e2e for app).
-- [x] Environment setup (.env for DB/JWT, Prettier/ESLint).
+- [ ] User registration and profile creation (auto-linked one-to-one).
+- [ ] Basic CRUD for users (create, read, update, delete).
+- [ ] Basic CRUD for profiles (bio, avatar, social links).
+- [ ] Server creation and management (name, servername unique).
+- [ ] Channel management (text/voice types, public/restrict/private status, DM flag).
+- [ ] Membership system (users join servers with roles).
+- [ ] Role system (permissions as JSON, e.g., manage channels).
+- [ ] Messaging (text content as JSON, threading via parentMessageId, soft deletes).
+- [ ] Attachments for messages (URL, type, size).
+- [ ] Reactions for messages (emoji, unique per user-message).
+- [ ] Prisma migrations and schema (cascading deletes, enums for types/status).
+- [ ] Basic testing (unit specs for services/controllers, e2e for app).
+- [ ] Environment setup (.env for DB/JWT, Prettier/ESLint).
 
 #### 2. Todo Tasks
 
