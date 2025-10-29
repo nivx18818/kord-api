@@ -3,6 +3,7 @@
 Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-inspired real-time community platform).
 
 ## Project Overview
+
 - **Purpose**: Real-time community platform modeled after Discord, supporting servers, channels, messaging, threading, reactions, roles, and user profiles.
 - **Backend**: NestJS modules for REST APIs and WebSocket gateways.
 - **Persistence**: Prisma ORM targeting MySQL, configured via `DATABASE_URL`.
@@ -30,6 +31,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
   - Reaction tracking for engagement metrics.
 
 ## Core Architecture
+
 - `src/app.module.ts` wires the global `PrismaModule` alongside domain modules (`users` today); new verticals adopt the same registration.
 - Domain modules live in `src/modules/<domain>` with controllers delegating to services and DTOs in `dto/`; keep Prisma access inside the service layer.
 - `src/modules/prisma/prisma.module.ts` marks Prisma as a global provider so it only needs to be imported once.
@@ -37,6 +39,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Group NestJS modules by domain (`users`, `servers`, `channels`, `messages`, etc.). Each module should define controllers, services, DTOs, and providers that wrap Prisma queries. Inject shared services (e.g., Prisma) via NestJS dependency injection.
 
 ## Data & Persistence
+
 - Prisma targets MySQL through `DATABASE_URL` and emits the generated client to `generated/prisma`; regenerate with `npx prisma generate --schema prisma/schema.prisma` after schema tweaks.
 - Migrations live in `prisma/migrations`; create new ones with `npx prisma migrate dev --name <desc>` so the schema, client, and database stay aligned.
 - Services should prefer selective reads (`select`/`include`) and transaction blocks for multi-step writes, matching the guidance captured in `AGENTS.md`.
@@ -49,6 +52,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Leverage `deletedAt` and timestamp fields to support archival, auditing, and soft delete patterns.
 
 ## HTTP & Realtime
+
 - REST endpoints are declared with Nest decorators (`@Controller('users')`, `@Post()` etc.) and should return the Prisma results instead of placeholder strings—see `UsersService.create` as the next implementation target.
 - Real-time gateways are planned but not yet implemented; isolate future WebSocket gateways alongside their domains to keep dependencies thin.
 - Environment-aware bootstrapping happens in `src/main.ts`, defaulting to port 3000; honor the `PORT` env var when deploying.
@@ -56,6 +60,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Verify membership and role permissions before broadcasting channel/server events.
 
 ## Error Handling & Validation
+
 - Map Prisma known errors to HTTP exceptions; provide clear messages for unique constraint violations on usernames, emails, and servernames.
 - Surface authorization failures through NestJS Guards and Interceptors.
 - Rely on `class-validator`/`class-transformer` for payload validation and transformation.
@@ -63,12 +68,14 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - DTOs in `src/modules/**/dto` should mirror `prisma/schema.prisma`; add `class-validator` decorators as fields solidify.
 
 ## Testing Strategy
+
 - Favor unit tests for services and guards using NestJS testing utilities with mocked Prisma client.
 - Add integration tests against a disposable Prisma database when flows span multiple tables.
 - Unit tests execute with `npm run test`; `npm run test:e2e` drives `test/app.e2e-spec.ts`, which currently expects a `GET /` response of `Hello World!`—update either the controller or the spec when behavior changes.
 - New features should ship with corresponding tests under `src/**/*.spec.ts` or `test/` and be registered through `AppModule`.
 
 ## Developer Workflow
+
 - Install dependencies with `npm install`; run the API using `npm run start:dev` for watch mode or `npm run start:prod` after `npm run build`.
 - Lint with `npm run lint` (type-aware ESLint config in `eslint.config.mjs`) and format code via `npm run format`.
 - Configure an `.env` providing `DATABASE_URL` before invoking Prisma commands; migrations and client generation will fail silently without it.
@@ -76,6 +83,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Reference existing indexes (`@@index`) when designing queries to keep performance aligned with schema hints.
 
 ## Conventions & Tips
+
 - Use `context7` MCP tool to read latest official docs about packages (**ONLY AS NEEDED**).
 - Keep Prisma usage centralized in services so other providers consume business-level methods instead of raw queries.
 - Follow schema naming: persisted columns like `date_of_birth`, `servername`, and soft-delete `deleted_at` already map to camelCase fields in the client.
