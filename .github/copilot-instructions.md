@@ -46,6 +46,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - JSON-heavy columns such as `Role.permissions` and `Message.content` need DTO validation before persisting to avoid malformed payloads.
 - Keep DTO validation aligned with the Prisma schema (respect optionals, enums, JSON fields).
 - Wrap multi-step mutations (message + attachments, membership + role) in transactions.
+- Prefer Prisma transactions for multi-step writes.
 - Use `select`/`include` to limit payload size and avoid N+1s.
 - Update enums in `prisma/schema.prisma` and regenerate the client (`npx prisma generate`) when adding channel types/statuses.
 - Document any evolution of the permission JSON structure; consider centralizing permission keys/constants.
