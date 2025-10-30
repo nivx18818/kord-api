@@ -32,16 +32,16 @@ These are broken into phases from the plans. Focus on one phase at a time for si
 
 **Phase 1: Authentication**
 
-- [ ] Install auth dependencies (e.g., `@nestjs/passport`, `bcrypt`).
-- [ ] Create `AuthModule` with service/controller.
-- [ ] Implement password hashing in UsersService.
-- [ ] Add endpoints: `POST /auth/register` (user + profile), `POST /auth/login` (JWT), `POST /auth/refresh`.
-- [ ] Add email checking endpoint (e.g., `GET /auth/check-email?email=:email`).
-- [ ] Set up `LocalStrategy` and `JwtStrategy`.
-- [ ] Apply `JwtAuthGuard` to protected routes.
-- [ ] Add `RefreshToken` model to Prisma schema and migrate.
-- [ ] Create `@CurrentUser` decorator.
-- [ ] Write unit/E2E tests for auth flows.
+- [x] Install auth dependencies (e.g., `@nestjs/passport`, `bcrypt`).
+- [x] Create `AuthModule` with service/controller.
+- [x] Implement password hashing in AuthService (bcrypt with 12 rounds).
+- [x] Add endpoints: `POST /auth/register` (user + profile), `POST /auth/login` (JWT), `POST /auth/refresh`.
+- [x] Add email checking endpoint (e.g., `GET /auth/check-email?email=:email`).
+- [x] Set up `LocalStrategy` and `JwtStrategy`.
+- [x] Apply `JwtAuthGuard` to protected routes.
+- [x] Add `RefreshToken` model to Prisma schema and migrate.
+- [x] Create `@CurrentUser` decorator.
+- [x] Write unit/E2E tests for auth flows.
 
 **Phase 2: App Flows**
 
