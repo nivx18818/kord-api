@@ -85,10 +85,10 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 
 ## Conventions & Tips
 
-- Use `context7` MCP tool to read latest official docs about packages (**ONLY AS NEEDED**).
+- Use `context7` MCP tool to read latest official docs about packages as needed.
 - Keep Prisma usage centralized in services so other providers consume business-level methods instead of raw queries.
 - Follow schema naming: persisted columns like `date_of_birth`, `servername`, and soft-delete `deleted_at` already map to camelCase fields in the client.
 - Follow NestJS conventions (controllers expose routes, services handle business logic, modules wire dependencies).
 - Adhere to repository ESLint/Prettier settings for consistency.
 - TypeScript is compiled with the NodeNext module system per `tsconfig.json`; imports must use ESM syntax even when targeting CommonJS consumers.
-- Keep this guide synchronized with major architectural or domain changes and cross-link additional specs in `docs/` as they are added.
+- Read the `docs/` directory for project plans and diagrams as needed.
