@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AppController } from './app.controller';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { ChannelsModule } from './modules/channels/channels.module';
 import { MembershipsModule } from './modules/memberships/memberships.module';
 import { MessagesModule } from './modules/messages/messages.module';
@@ -15,16 +16,17 @@ import { UsersModule } from './modules/users/users.module';
 @Module({
   controllers: [AppController],
   imports: [
-    PrismaModule,
-    UsersModule,
-    ProfilesModule,
-    ServersModule,
-    ChannelsModule,
-    RolesModule,
-    MessagesModule,
     AttachmentsModule,
+    AuthModule,
+    ChannelsModule,
     MembershipsModule,
+    MessagesModule,
+    PrismaModule,
+    ProfilesModule,
     ReactionsModule,
+    RolesModule,
+    ServersModule,
+    UsersModule,
   ],
   providers: [],
 })
