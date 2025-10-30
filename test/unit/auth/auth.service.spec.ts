@@ -113,15 +113,15 @@ describe('AuthService', () => {
 
   describe('login', () => {
     const loginDto: LoginDto = {
-      email: 'test@example.com',
       password: 'Password123!',
+      usernameOrEmail: 'test@example.com',
     };
 
-    it('should successfully login with valid credentials', async () => {
+    it('should successfully login with valid credentials using email', async () => {
       // Arrange
       const hashedPassword = await bcrypt.hash(loginDto.password, 12);
       const mockUser = {
-        email: loginDto.email,
+        email: 'test@example.com',
         id: 1,
         password: hashedPassword,
         username: 'testuser',
@@ -133,6 +133,33 @@ describe('AuthService', () => {
 
       // Act
       const result = await service.login(loginDto);
+
+      // Assert
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+      expect(prisma.refreshToken.create).toHaveBeenCalled();
+    });
+
+    it('should successfully login with valid credentials using username', async () => {
+      // Arrange
+      const loginWithUsername = {
+        password: 'Password123!',
+        usernameOrEmail: 'testuser',
+      };
+      const hashedPassword = await bcrypt.hash(loginWithUsername.password, 12);
+      const mockUser = {
+        email: 'test@example.com',
+        id: 1,
+        password: hashedPassword,
+        username: 'testuser',
+      };
+
+      prisma.user.findUnique.mockResolvedValue(mockUser as any);
+      prisma.refreshToken.create.mockResolvedValue({} as any);
+      jest.spyOn(jwtService, 'sign').mockReturnValue('mock-token');
+
+      // Act
+      const result = await service.login(loginWithUsername);
 
       // Assert
       expect(result).toHaveProperty('accessToken');
@@ -156,7 +183,7 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if password is invalid', async () => {
       // Arrange
       const mockUser = {
-        email: loginDto.email,
+        email: 'test@example.com',
         id: 1,
         password: await bcrypt.hash('WrongPassword', 12),
         username: 'testuser',

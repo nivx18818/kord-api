@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -28,6 +28,9 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ forbidNonWhitelisted: true, whitelist: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
     await app.init();
   });
@@ -135,12 +138,12 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/login (POST)', () => {
-    it('should login successfully with valid credentials', () => {
+    it('should login successfully with valid credentials using email', () => {
       return request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          email: testUser.email,
           password: testUser.password,
+          usernameOrEmail: testUser.email,
         })
         .expect(HttpStatus.OK)
         .expect((res) => {
@@ -151,12 +154,36 @@ describe('AuthController (e2e)', () => {
         });
     });
 
+    it('should login successfully with valid credentials using username', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          password: testUser.password,
+          usernameOrEmail: testUser.username,
+        })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('accessToken');
+          expect(res.body).toHaveProperty('refreshToken');
+        });
+    });
+
     it('should return 401 for invalid email', () => {
       return request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          email: 'nonexistent@example.com',
           password: testUser.password,
+          usernameOrEmail: 'nonexistent@example.com',
+        })
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 401 for invalid username', () => {
+      return request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          password: testUser.password,
+          usernameOrEmail: 'nonexistentuser',
         })
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -165,8 +192,8 @@ describe('AuthController (e2e)', () => {
       return request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          email: testUser.email,
           password: 'WrongPassword123!',
+          usernameOrEmail: testUser.email,
         })
         .expect(HttpStatus.UNAUTHORIZED);
     });
