@@ -74,13 +74,13 @@ export class AuthService {
 
   async refresh(refreshToken: string): Promise<AuthResponseDto> {
     try {
-      // Verify refresh token - note: we use the same secret as access token for simplicity
-      // In production, you might want to use a separate refresh token secret
       const payload = this.jwtService.verify<{
         email: string;
         sub: number;
         username: string;
-      }>(refreshToken);
+      }>(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
 
       // Check if refresh token exists in database
       const storedToken = await this.prisma.refreshToken.findFirst({
@@ -219,14 +219,21 @@ export class AuthService {
     // Generate access token
     const accessToken = this.jwtService.sign(payload);
 
-    // Generate refresh token (longer expiration) with unique jti to avoid collisions
-    const refreshToken = this.jwtService.sign({
-      ...payload,
-      jti: `${userId}-${Date.now()}-${Math.random()}`,
-    });
+    // Generate refresh token with unique jti to avoid collisions
+    const refreshToken = this.jwtService.sign(
+      {
+        ...payload,
+        jti: `${userId}-${Date.now()}-${Math.random()}`,
+      },
+      {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        expiresIn: process.env.JWT_REFRESH_EXPIRATION as any,
+        secret: process.env.JWT_REFRESH_SECRET,
+      },
+    );
 
     // Calculate expiration date
-    const expiresIn = process.env.JWT_REFRESH_EXPIRATION || '7d';
+    const expiresIn = process.env.JWT_REFRESH_EXPIRATION as string;
     const expiresAt = new Date();
 
     // Parse expiration string (e.g., "7d", "30d")

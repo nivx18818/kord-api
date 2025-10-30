@@ -14,8 +14,9 @@ import { LocalStrategy } from './strategies/local.strategy';
   imports: [
     JwtModule.register({
       global: false,
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '15m' },
+      secret: process.env.JWT_ACCESS_SECRET,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      signOptions: { expiresIn: process.env.JWT_EXPIRATION as any },
     }),
     PrismaModule,
     UsersModule,
