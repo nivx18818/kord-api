@@ -1,0 +1,142 @@
+@startuml Kord_API_Flows
+!theme plain
+skinparam packageStyle rectangle
+
+' === ACTORS ===
+actor User
+participant "AuthController" as AuthC
+participant "AuthService" as AuthS
+participant "UsersService" as UsersS
+participant "ServersService" as ServersS
+participant "ChannelsService" as ChannelsS
+participant "MessagesService" as MsgS
+participant "RolesGuard" as RolesG
+participant "VideoGateway" as VideoG
+participant "PrismaService" as Prisma
+
+' === AUTH FLOWS ===
+== Registration ==
+User -> AuthC: POST /auth/register (email, password, profile)
+AuthC -> AuthS: register(dto)
+AuthS -> UsersS: create user + profile (hash password)
+UsersS -> Prisma: user.create({data})
+Prisma --> UsersS: user record
+UsersS --> AuthS: created user
+AuthS --> AuthC: JWT tokens (access + refresh)
+AuthC --> User: 201 Created + tokens
+
+== Login ==
+User -> AuthC: POST /auth/login (email, password)
+AuthC -> AuthS: validateUser()
+AuthS -> Prisma: user.findUnique(email)
+AuthS -> AuthS: compare password (bcrypt)
+AuthS -> Prisma: refreshToken.create()
+AuthS --> AuthC: tokens
+AuthC --> User: 200 OK + JWT
+
+== Refresh Token ==
+User -> AuthC: POST /auth/refresh
+AuthC -> AuthS: validateRefreshToken()
+AuthS -> Prisma: refreshToken.findUnique()
+AuthS -> AuthS: issue new tokens
+AuthS --> AuthC: accessToken
+AuthC --> User: 200 OK
+
+== Check Email ==
+User -> AuthC: GET /auth/check-email?email=:email
+AuthC -> AuthS: checkEmail(email)
+AuthS -> Prisma: user.findUnique(email)
+Prisma --> AuthS: result
+AuthS --> AuthC: true/false
+AuthC --> User: availability
+
+' === SERVER / CHANNEL / MESSAGE FLOWS ===
+== Create Server ==
+User -> ServersS: POST /servers (name)
+ServersS -> RolesG: checkPermissions(MANAGE_SERVERS)
+RolesG -> Prisma: membership.findUnique(userId, serverId)
+RolesG --> ServersS: permitted
+ServersS -> Prisma: server.create({data})
+ServersS --> User: 201 Created
+
+== Create Channel ==
+User -> ChannelsS: POST /channels (serverId, type)
+ChannelsS -> RolesG: checkPermissions(MANAGE_CHANNELS)
+RolesG --> ChannelsS: ok
+ChannelsS -> Prisma: channel.create({data})
+ChannelsS --> User: 201 Created
+
+== Send Message ==
+User -> MsgS: POST /messages (channelId, content)
+MsgS -> RolesG: checkPermissions(SEND_MESSAGES)
+RolesG --> MsgS: ok
+MsgS -> Prisma: message.create({data})
+MsgS -> VideoG: emit("message.created", payload)
+MsgS --> User: 201 Created
+
+== Edit Message ==
+User -> MsgS: PATCH /messages/:id (content)
+MsgS -> RolesG: verifyOwnershipOrPerm(EDIT_MESSAGES)
+MsgS -> Prisma: message.update()
+MsgS -> VideoG: emit("message.updated")
+MsgS --> User: 200 OK
+
+== Typing Indicator ==
+User -> VideoG: websocket event user.typing(channelId)
+VideoG -> ChannelsS: verifyMembership()
+ChannelsS -> Prisma: membership.findUnique()
+ChannelsS --> VideoG: ok
+VideoG -> VideoG: broadcast(user.typing) to channel room
+
+== Invite / Join Server ==
+User -> ServersS: POST /servers/:id/invites
+ServersS -> RolesG: checkPermissions(MANAGE_INVITES)
+ServersS -> Prisma: invite.create({serverId, code})
+ServersS --> User: inviteCode
+
+User -> ServersS: POST /invites/:code/join
+ServersS -> Prisma: invite.findUnique(code)
+ServersS -> Prisma: membership.create(userId, serverId)
+ServersS --> User: joined server
+
+== Mute / Block ==
+User -> UsersS: POST /users/:id/mute
+UsersS -> Prisma: userMute.create(userId, targetId)
+User -> ChannelsS: POST /channels/:id/block
+ChannelsS -> Prisma: channelBlock.create(userId, channelId)
+
+' === AUTHORIZATION ===
+== Role Checks ==
+RolesG -> Prisma: getMembershipRoles(userId, serverId)
+RolesG -> Prisma: getRolePermissions(roleIds)
+RolesG -> RolesG: check RequiredPermissions
+RolesG --> Service: allow / deny
+
+== Assign Role ==
+User -> ServersS: POST /servers/:id/members/:userId/roles/:roleId
+ServersS -> RolesG: checkPermissions(MANAGE_ROLES)
+ServersS -> Prisma: userServer.update(roles)
+ServersS --> User: 200 OK
+
+' === VIDEO CALL SIGNALING ===
+== Join Call ==
+User -> VideoG: joinCall(channelId)
+VideoG -> RolesG: checkPermissions(CONNECT_VOICE)
+RolesG --> VideoG: ok
+VideoG -> Prisma: channel.update(activeCall=true)
+VideoG -> VideoG: create mediasoup transport
+VideoG --> User: transport params
+
+== WebRTC Offer/Answer ==
+User -> VideoG: offer(sdp)
+VideoG -> VideoG: forward to peers
+User -> VideoG: answer(sdp)
+VideoG -> VideoG: exchange candidates
+
+== Leave Call ==
+User -> VideoG: leaveCall(channelId)
+VideoG -> Prisma: update activeCall=false
+VideoG -> VideoG: broadcast(user.leftCall)
+VideoG --> User: 200 OK
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml Kord_API_Components
+!theme plain
+left to right direction
+skinparam componentStyle rectangle
+
+actor User
+node "Client (Web / App)" as Client
+
+rectangle "Kord API (NestJS)" {
+  [AuthModule]
+  [UsersModule]
+  [ServersModule]
+  [ChannelsModule]
+  [MessagesModule]
+  [RolesModule]
+  [VideoModule]
+  [PrismaModule]
+  [Guards & Decorators]
+  [Shared DTOs & Utils]
+}
+
+database "MySQL (via Prisma)" as DB
+cloud "WebSocket Gateway" as WS
+
+' === RELATIONSHIPS ===
+User --> Client : uses
+Client --> [AuthModule] : HTTP (register/login/refresh)
+Client --> [ServersModule] : HTTP (create/join servers)
+Client --> [ChannelsModule] : HTTP (create/list channels)
+Client --> [MessagesModule] : HTTP (send/edit/delete messages)
+Client --> WS : WebSocket (real-time events)
+Client --> [VideoModule] : WebRTC signaling (via WS)
+
+[AuthModule] --> [UsersModule] : create user on register
+[AuthModule] --> [PrismaModule] : access DB
+[AuthModule] --> [Guards & Decorators] : JwtAuthGuard, @CurrentUser
+
+[UsersModule] --> [PrismaModule] : CRUD operations
+[ServersModule] --> [RolesModule] : permission checks
+[ServersModule] --> [PrismaModule] : manage servers, invites, memberships
+
+[ChannelsModule] --> [ServersModule] : resolve server relations
+[ChannelsModule] --> [RolesModule] : validate permissions
+[ChannelsModule] --> [PrismaModule] : channel CRUD
+
+[MessagesModule] --> [ChannelsModule] : validate membership
+[MessagesModule] --> [RolesModule] : SEND_MESSAGES perm
+[MessagesModule] --> [PrismaModule] : store messages & attachments
+[MessagesModule] --> WS : broadcast events (message.created, typing)
+
+[RolesModule] --> [PrismaModule] : load roles, permissions
+[RolesModule] --> [Guards & Decorators] : RolesGuard, @RequiredPermissions
+
+[VideoModule] --> [RolesModule] : check CONNECT_VOICE perm
+[VideoModule] --> WS : signaling (joinCall, offer, answer, ice)
+[VideoModule] --> [PrismaModule] : update activeCall/channel status
+
+[PrismaModule] --> DB : ORM layer
+
+@enduml
