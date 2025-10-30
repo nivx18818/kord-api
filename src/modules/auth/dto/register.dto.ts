@@ -10,41 +10,17 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(8)
-  password: string;
+  name?: string;
 
   @IsString()
   username: string;
 
+  @IsString()
+  @MinLength(8)
+  password: string;
+
   @IsDateString()
   dateOfBirth: string;
-
-  @IsOptional()
-  @IsString()
-  bio?: string;
-
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @IsOptional()
-  @IsString()
-  xTwitter?: string;
-
-  @IsOptional()
-  @IsString()
-  github?: string;
-
-  @IsOptional()
-  @IsString()
-  linkedin?: string;
-
-  @IsOptional()
-  @IsString()
-  facebook?: string;
-
-  @IsOptional()
-  @IsString()
-  website?: string;
 }

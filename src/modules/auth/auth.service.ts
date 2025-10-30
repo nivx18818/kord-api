@@ -151,27 +151,8 @@ export class AuthService {
         data: {
           dateOfBirth: new Date(registerDto.dateOfBirth),
           email: registerDto.email,
+          name: registerDto.name,
           password: hashedPassword,
-          profile:
-            registerDto.bio ||
-            registerDto.avatar ||
-            registerDto.xTwitter ||
-            registerDto.github ||
-            registerDto.linkedin ||
-            registerDto.facebook ||
-            registerDto.website
-              ? {
-                  create: {
-                    avatar: registerDto.avatar,
-                    bio: registerDto.bio,
-                    facebook: registerDto.facebook,
-                    github: registerDto.github,
-                    linkedin: registerDto.linkedin,
-                    website: registerDto.website,
-                    xTwitter: registerDto.xTwitter,
-                  },
-                }
-              : undefined,
           username: registerDto.username,
         },
       });
