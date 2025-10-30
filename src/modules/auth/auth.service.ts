@@ -38,7 +38,10 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    // Find user by email
+    // Check if input is email or username
+    const isEmail = loginDto.usernameOrEmail.includes('@');
+
+    // Find user by email or username
     const user = await this.prisma.user.findUnique({
       select: {
         email: true,
@@ -46,7 +49,9 @@ export class AuthService {
         password: true,
         username: true,
       },
-      where: { email: loginDto.email },
+      where: isEmail
+        ? { email: loginDto.usernameOrEmail }
+        : { username: loginDto.usernameOrEmail },
     });
 
     if (!user) {
@@ -171,9 +176,12 @@ export class AuthService {
   }
 
   async validateUser(
-    email: string,
+    usernameOrEmail: string,
     password: string,
   ): Promise<null | { email: string; id: number; username: string }> {
+    // Check if input is email or username
+    const isEmail = usernameOrEmail.includes('@');
+
     const user = await this.prisma.user.findUnique({
       select: {
         email: true,
@@ -181,7 +189,9 @@ export class AuthService {
         password: true,
         username: true,
       },
-      where: { email },
+      where: isEmail
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail },
     });
 
     if (!user) {
@@ -209,11 +219,11 @@ export class AuthService {
     // Generate access token
     const accessToken = this.jwtService.sign(payload);
 
-    // Generate refresh token (longer expiration)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
-    } as any);
+    // Generate refresh token (longer expiration) with unique jti to avoid collisions
+    const refreshToken = this.jwtService.sign({
+      ...payload,
+      jti: `${userId}-${Date.now()}-${Math.random()}`,
+    });
 
     // Calculate expiration date
     const expiresIn = process.env.JWT_REFRESH_EXPIRATION || '7d';
