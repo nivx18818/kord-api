@@ -1,0 +1,21 @@
+meta {
+  name: me-invalid-token
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{base_url}}/auth/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: invalid.token.here
+}
+
+tests {
+  test("Status should be 401 with invalid token", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

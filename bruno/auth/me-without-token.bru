@@ -1,0 +1,17 @@
+meta {
+  name: me-without-token
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{base_url}}/auth/me
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 401 without token", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

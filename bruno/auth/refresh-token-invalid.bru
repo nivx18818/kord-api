@@ -1,0 +1,27 @@
+meta {
+  name: refresh-token-invalid
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{base_url}}/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "invalid.token.here"
+  }
+}
+
+tests {
+  test("Status should be 401 for invalid refresh token", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+
+  test("Response should indicate invalid token", function () {
+    expect(res.getBody().message).to.include("Invalid refresh token");
+  });
+}

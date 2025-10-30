@@ -1,0 +1,28 @@
+meta {
+  name: login-invalid-email
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{base_url}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "usernameOrEmail": "nonexistent@example.com",
+    "password": "Password123!"
+  }
+}
+
+tests {
+  test("Status should be 401 for invalid email", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+
+  test("Response should indicate invalid credentials", function () {
+    expect(res.getBody().message).to.include("Invalid credentials");
+  });
+}

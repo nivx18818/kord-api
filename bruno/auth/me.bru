@@ -1,0 +1,32 @@
+meta {
+  name: me
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{base_url}}/auth/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("Status should be 200 with valid token", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should include user information", function () {
+    expect(res.getBody()).to.have.property("id");
+    expect(res.getBody()).to.have.property("email");
+    expect(res.getBody()).to.have.property("username");
+  });
+
+  test("Response should match test user", function () {
+    expect(res.getBody().email).to.equal(bru.getEnvVar("testEmail"));
+    expect(res.getBody().username).to.equal(bru.getEnvVar("testUsername"));
+  });
+}

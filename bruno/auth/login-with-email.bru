@@ -1,0 +1,41 @@
+meta {
+  name: login-with-email
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "usernameOrEmail": "{{testEmail}}",
+    "password": "{{testPassword}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200) {
+    bru.setEnvVar("accessToken", res.getBody().accessToken);
+    bru.setEnvVar("refreshToken", res.getBody().refreshToken);
+  }
+}
+
+tests {
+  test("Status should be 200 for successful login", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should include accessToken", function () {
+    expect(res.getBody()).to.have.property("accessToken");
+    expect(res.getBody().accessToken).to.be.a("string");
+  });
+
+  test("Response should include refreshToken", function () {
+    expect(res.getBody()).to.have.property("refreshToken");
+    expect(res.getBody().refreshToken).to.be.a("string");
+  });
+}

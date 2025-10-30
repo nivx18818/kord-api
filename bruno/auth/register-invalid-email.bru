@@ -1,0 +1,38 @@
+meta {
+  name: register-invalid-email
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "testuser_{{timestamp}}",
+    "email": "invalid-email",
+    "password": "Password123!",
+    "dateOfBirth": "1990-01-01"
+  }
+}
+
+script:pre-request {
+  bru.setVar("timestamp", Date.now());
+}
+
+tests {
+  test("Status should be 400 for invalid email", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Response should indicate validation error", function () {
+    const messages = res.getBody().message;
+    const hasEmailError = messages.some(msg =>
+      msg.includes("email") || msg.includes("Email")
+    );
+    expect(hasEmailError).to.be.true;
+  });
+}

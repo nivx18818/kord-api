@@ -1,0 +1,34 @@
+meta {
+  name: register-duplicate-username
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "{{testUsername}}",
+    "email": "different_{{timestamp}}@example.com",
+    "password": "Password123!",
+    "dateOfBirth": "1990-01-01"
+  }
+}
+
+script:pre-request {
+  bru.setVar("timestamp", Date.now());
+}
+
+tests {
+  test("Status should be 409 for duplicate username", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+
+  test("Response should indicate username conflict", function () {
+    expect(res.getBody().message).to.include("Username already exists");
+  });
+}
