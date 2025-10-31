@@ -6,8 +6,8 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/modules/prisma/prisma.service';
+import { AppModule } from '@/app.module';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;

@@ -8,10 +8,10 @@ import * as bcrypt from 'bcrypt';
 import { PrismaClient } from 'generated/prisma';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
-import { AuthService } from '../../../src/modules/auth/auth.service';
-import { LoginDto } from '../../../src/modules/auth/dto/login.dto';
-import { RegisterDto } from '../../../src/modules/auth/dto/register.dto';
-import { PrismaService } from '../../../src/modules/prisma/prisma.service';
+import { AuthService } from '@/modules/auth/auth.service';
+import { LoginDto } from '@/modules/auth/dto/login.dto';
+import { RegisterDto } from '@/modules/auth/dto/register.dto';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 
 describe('AuthService', () => {
   let service: AuthService;
