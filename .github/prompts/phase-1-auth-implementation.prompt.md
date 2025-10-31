@@ -1,5 +1,6 @@
 ---
-description: "Implementation assistant for executing well-defined development tasks with a focus on code quality, best practices, and adherence to project conventions."
+description: 'Implement Phase 1 – Authentication for Kord API'
+# prettier-ignore
 tools: ['edit/createFile', 'edit/createDirectory', 'edit/editFiles', 'search', 'runCommands', 'runTasks', 'context7/*', 'upstash/context7/*', 'usages', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'prisma.prisma/prisma-migrate-status', 'prisma.prisma/prisma-migrate-dev', 'prisma.prisma/prisma-migrate-reset', 'prisma.prisma/prisma-studio', 'prisma.prisma/prisma-platform-login', 'prisma.prisma/prisma-postgres-create-database', 'extensions', 'todos']
 ---
 
@@ -8,6 +9,7 @@ tools: ['edit/createFile', 'edit/createDirectory', 'edit/editFiles', 'search', '
 Implement **user authentication** for the NestJS-based Kord API using JWT tokens.
 
 ### Scope
+
 Set up registration, login, refresh, and email check endpoints using **Passport.js**, **bcrypt**, and **Prisma**.
 Integrate with `UsersService` and Prisma schema (add `RefreshToken` model).
 Follow NestJS conventions and align with `AuthModule` in the component diagram.
@@ -35,6 +37,7 @@ Follow NestJS conventions and align with `AuthModule` in the component diagram.
   - Return `{ available: boolean }`.
 
 ### Requirements
+
 - Use `JwtAuthGuard` and `@CurrentUser` for protected routes.
 - Map Prisma unique violations to 400 responses.
 - Standardize error messages and HTTP codes.
@@ -42,11 +45,13 @@ Follow NestJS conventions and align with `AuthModule` in the component diagram.
 - Ensure JWT secrets and expiry are configurable via `.env`.
 
 ### Integration
+
 - AuthModule ↔ UsersModule (create users)
 - AuthModule ↔ PrismaModule (DB access)
 - Implement DTOs, strategies, guards.
 
 ### Deliverables
+
 - Updated Prisma schema (with `RefreshToken` model).
 - Working endpoints with tests.
 - Code formatted and linted (`npm run lint && npm run format`).
