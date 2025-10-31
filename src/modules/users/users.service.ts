@@ -53,6 +53,45 @@ export class UsersService {
     return user;
   }
 
+  async findUserServers(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      include: {
+        UserServer: {
+          include: {
+            role: true,
+            server: true,
+          },
+        },
+      },
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user.UserServer.map((membership) => ({
+      ...membership.server,
+      joinedAt: membership.createdAt,
+      role: membership.role,
+    }));
+  }
+
+  async getMutedUsers(userId: number) {
+    return await this.prisma.userMute.findMany({
+      include: {
+        target: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
+      },
+      where: { userId },
+    });
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       return await this.prisma.user.update({
@@ -94,5 +133,56 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  async muteUser(userId: number, targetId: number, reason?: string) {
+    if (userId === targetId) {
+      throw new ConflictException('Cannot mute yourself');
+    }
+
+    // Check if both users exist
+    const [user, target] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.user.findUnique({ where: { id: targetId } }),
+    ]);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    if (!target) {
+      throw new NotFoundException(`Target user with ID ${targetId} not found`);
+    }
+
+    try {
+      return await this.prisma.userMute.create({
+        data: {
+          reason,
+          targetId,
+          userId,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('User already muted');
+      }
+      throw error;
+    }
+  }
+
+  async unmuteUser(userId: number, targetId: number) {
+    const mute = await this.prisma.userMute.findFirst({
+      where: { targetId, userId },
+    });
+
+    if (!mute) {
+      throw new NotFoundException('Mute not found');
+    }
+
+    return await this.prisma.userMute.delete({
+      where: { id: mute.id },
+    });
   }
 }
