@@ -69,8 +69,11 @@ export class MessagesService {
         const meta = error.meta as { field_name?: string };
         if (meta?.field_name?.includes('userId')) {
           throw new UserNotFoundException(createMessageDto.userId);
+        } else if (meta?.field_name?.includes('channelId')) {
+          throw new ChannelNotFoundException(createMessageDto.channelId);
         }
-        throw new ChannelNotFoundException(createMessageDto.channelId);
+        // Generic message when we can't determine which FK failed
+        throw new MessageNotFoundException('User or channel not found');
       }
       throw error;
     }

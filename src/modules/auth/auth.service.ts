@@ -1,11 +1,15 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  EmailAlreadyExistsException,
+  KordUnauthorizedException,
+  RefreshTokenInvalidException,
+  UsernameAlreadyExistsException,
+  UserNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -55,7 +59,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new KordUnauthorizedException('Invalid credentials');
     }
 
     // Verify password
@@ -65,7 +69,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new KordUnauthorizedException('Invalid credentials');
     }
 
     // Generate tokens
@@ -94,7 +98,7 @@ export class AuthService {
       });
 
       if (!storedToken) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new RefreshTokenInvalidException();
       }
 
       // Get user info
@@ -108,7 +112,7 @@ export class AuthService {
       });
 
       if (!user) {
-        throw new UnauthorizedException('User not found');
+        throw new UserNotFoundException(payload.sub);
       }
 
       // Delete old refresh token
@@ -119,7 +123,7 @@ export class AuthService {
       // Generate new tokens
       return this.generateTokens(user.id, user.email, user.username);
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new RefreshTokenInvalidException();
     }
   }
 
@@ -130,7 +134,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new EmailAlreadyExistsException(registerDto.email);
     }
 
     // Check if username already exists
@@ -139,7 +143,7 @@ export class AuthService {
     });
 
     if (existingUsername) {
-      throw new ConflictException('Username already exists');
+      throw new UsernameAlreadyExistsException(registerDto.username);
     }
 
     // Hash password
@@ -169,7 +173,14 @@ export class AuthService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Username or email already exists');
+        const target = error.meta?.target as string[] | undefined;
+        const field = target?.[0];
+
+        if (field === 'email') {
+          throw new EmailAlreadyExistsException(registerDto.email);
+        } else if (field === 'username') {
+          throw new UsernameAlreadyExistsException(registerDto.username);
+        }
       }
       throw error;
     }

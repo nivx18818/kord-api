@@ -1,6 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
+
+import { KordUnauthorizedException } from '@/common/exceptions/kord.exceptions';
 
 import { AuthService } from '../auth.service';
 
@@ -24,7 +26,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   ): Promise<ValidatedUser> {
     const user = await this.authService.validateUser(usernameOrEmail, password);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new KordUnauthorizedException('Invalid credentials');
     }
     return user as ValidatedUser;
   }

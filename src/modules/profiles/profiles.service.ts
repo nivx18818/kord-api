@@ -1,9 +1,7 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import { ProfileNotFoundException } from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -63,7 +61,7 @@ export class ProfilesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Profile for user ID ${userId} not found`);
+        throw new ProfileNotFoundException(userId);
       }
       throw error;
     }
@@ -79,7 +77,7 @@ export class ProfilesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Profile for user ID ${userId} not found`);
+        throw new ProfileNotFoundException(userId);
       }
       throw error;
     }

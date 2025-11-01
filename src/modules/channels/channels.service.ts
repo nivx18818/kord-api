@@ -188,7 +188,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new BadRequestException('Participant not found');
+        throw new ChannelNotFoundException('Participant not found');
       }
       throw error;
     }
