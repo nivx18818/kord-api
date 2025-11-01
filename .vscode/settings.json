@@ -10,7 +10,8 @@
     "*.resolver.ts": "nest",
     "*.gateway.ts": "nest",
     "*.decorator.ts": "nest-decorator",
-    "*.bru": "bruno"
+    "*.bru": "bruno",
+    "*.plantuml": "drawio"
   },
   "material-icon-theme.activeIconPack": "nest"
 }
