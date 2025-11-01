@@ -20,11 +20,7 @@ interface TypingPayload {
   username: string;
 }
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway()
 export class MessagesGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
@@ -67,7 +63,7 @@ export class MessagesGateway
     @ConnectedSocket() client: Socket,
   ) {
     const room = `channel-${data.channelId}`;
-    client.join(room);
+    void client.join(room);
     return { data: { channelId: data.channelId }, event: 'joined-channel' };
   }
 
@@ -77,7 +73,7 @@ export class MessagesGateway
     @ConnectedSocket() client: Socket,
   ) {
     const room = `channel-${data.channelId}`;
-    client.leave(room);
+    void client.leave(room);
     return { data: { channelId: data.channelId }, event: 'left-channel' };
   }
 
