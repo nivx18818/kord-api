@@ -12,15 +12,24 @@ import {
 
 import { CreateMessageDto } from '@/modules/messages/dto/create-message.dto';
 import { UpdateMessageDto } from '@/modules/messages/dto/update-message.dto';
+import { MessagesGateway } from '@/modules/messages/messages.gateway';
 import { MessagesService } from '@/modules/messages/messages.service';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 
 describe('MessagesService', () => {
   let service: MessagesService;
   let prisma: ReturnType<typeof createMockPrismaService>;
+  let messagesGateway: jest.Mocked<MessagesGateway>;
 
   beforeEach(async () => {
     prisma = createMockPrismaService();
+
+    // Create a mock for MessagesGateway
+    messagesGateway = {
+      broadcastMessageCreated: jest.fn(),
+      broadcastMessageDeleted: jest.fn(),
+      broadcastMessageUpdated: jest.fn(),
+    } as unknown as jest.Mocked<MessagesGateway>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -28,6 +37,10 @@ describe('MessagesService', () => {
         {
           provide: PrismaService,
           useValue: prisma,
+        },
+        {
+          provide: MessagesGateway,
+          useValue: messagesGateway,
         },
       ],
     }).compile();

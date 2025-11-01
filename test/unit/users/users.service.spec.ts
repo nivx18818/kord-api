@@ -54,7 +54,15 @@ describe('UsersService', () => {
       expect(result).toEqual(mockUser);
       expect(prisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: createUserDto,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          data: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            dateOfBirth: expect.any(Date),
+            email: createUserDto.email,
+            name: createUserDto.name,
+            password: createUserDto.password,
+            username: createUserDto.username,
+          }),
         }),
       );
     });
