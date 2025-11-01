@@ -90,7 +90,7 @@ export class ChannelsService {
     });
   }
 
-  async getBlockedChannels(userId: number) {
+  async getBlockedDMs(userId: number) {
     return await this.prisma.channelBlock.findMany({
       include: {
         channel: true,
@@ -133,7 +133,7 @@ export class ChannelsService {
     }
   }
 
-  async blockChannel(userId: number, channelId: number, reason?: string) {
+  async blockDM(userId: number, channelId: number, reason?: string) {
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
     });
@@ -159,19 +159,19 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Channel already blocked');
+        throw new ConflictException('DM already blocked');
       }
       throw error;
     }
   }
 
-  async unblockChannel(userId: number, channelId: number) {
+  async unblockDM(userId: number, channelId: number) {
     const block = await this.prisma.channelBlock.findFirst({
       where: { channelId, userId },
     });
 
     if (!block) {
-      throw new NotFoundException('Channel block not found');
+      throw new NotFoundException('DM block not found');
     }
 
     return await this.prisma.channelBlock.delete({

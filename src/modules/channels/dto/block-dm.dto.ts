@@ -1,6 +1,6 @@
 import { IsInt, IsOptional, IsString } from 'class-validator';
 
-export class BlockChannelDto {
+export class BlockDMDto {
   @IsInt()
   userId: number;
 

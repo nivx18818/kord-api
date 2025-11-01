@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { ChannelsService } from './channels.service';
-import { BlockChannelDto } from './dto/block-channel.dto';
+import { BlockDMDto } from './dto/block-dm.dto';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { FindOrCreateDMDto } from './dto/find-or-create-dm.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
@@ -53,19 +53,16 @@ export class ChannelsController {
   }
 
   @Post(':id/block')
-  blockChannel(
-    @Param('id') id: string,
-    @Body() blockChannelDto: BlockChannelDto,
-  ) {
-    return this.channelsService.blockChannel(
-      blockChannelDto.userId,
+  blockDM(@Param('id') id: string, @Body() blockDMDto: BlockDMDto) {
+    return this.channelsService.blockDM(
+      blockDMDto.userId,
       +id,
-      blockChannelDto.reason,
+      blockDMDto.reason,
     );
   }
 
   @Delete(':id/block/:userId')
-  unblockChannel(@Param('id') id: string, @Param('userId') userId: string) {
-    return this.channelsService.unblockChannel(+userId, +id);
+  unblockDM(@Param('id') id: string, @Param('userId') userId: string) {
+    return this.channelsService.unblockDM(+userId, +id);
   }
 }
