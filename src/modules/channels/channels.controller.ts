@@ -6,7 +6,10 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { ChannelsService } from './channels.service';
 import { AddParticipantDto } from './dto/add-participant.dto';
@@ -16,6 +19,7 @@ import { FindOrCreateDMDto } from './dto/find-or-create-dm.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 
 @Controller('channels')
+@UseGuards(JwtAuthGuard)
 export class ChannelsController {
   constructor(private readonly channelsService: ChannelsService) {}
 

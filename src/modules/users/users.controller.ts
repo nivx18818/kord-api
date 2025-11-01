@@ -7,9 +7,11 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { MuteUserDto } from './dto/mute-user.dto';
@@ -40,21 +42,25 @@ export class UsersController {
     return this.usersService.findUserServers(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/muted')
   getMutedUsers(@Param('id') id: string) {
     return this.usersService.getMutedUsers(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(+id, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/mute')
   muteUser(@Param('id') id: string, @Body() muteUserDto: MuteUserDto) {
     return this.usersService.muteUser(
@@ -64,6 +70,7 @@ export class UsersController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id/mute/:targetId')
   unmuteUser(@Param('id') id: string, @Param('targetId') targetId: string) {
     return this.usersService.unmuteUser(+id, +targetId);

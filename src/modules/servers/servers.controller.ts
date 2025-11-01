@@ -7,9 +7,11 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
 import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { CreateServerDto } from './dto/create-server.dto';
@@ -18,6 +20,7 @@ import { UpdateServerDto } from './dto/update-server.dto';
 import { ServersService } from './servers.service';
 
 @Controller('servers')
+@UseGuards(JwtAuthGuard)
 export class ServersController {
   constructor(private readonly serversService: ServersService) {}
 

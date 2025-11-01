@@ -6,13 +6,17 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateReactionDto } from './dto/create-reaction.dto';
 import { UpdateReactionDto } from './dto/update-reaction.dto';
 import { ReactionsService } from './reactions.service';
 
 @Controller('reactions')
+@UseGuards(JwtAuthGuard)
 export class ReactionsController {
   constructor(private readonly reactionsService: ReactionsService) {}
 

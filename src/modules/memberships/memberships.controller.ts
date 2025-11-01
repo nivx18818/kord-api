@@ -6,13 +6,17 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateMembershipDto } from './dto/create-membership.dto';
 import { UpdateMembershipDto } from './dto/update-membership.dto';
 import { MembershipsService } from './memberships.service';
 
 @Controller('memberships')
+@UseGuards(JwtAuthGuard)
 export class MembershipsController {
   constructor(private readonly membershipsService: MembershipsService) {}
 
