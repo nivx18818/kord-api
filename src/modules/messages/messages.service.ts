@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library'
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { MessagesGateway } from './messages.gateway';
 
 @Injectable()
 export class MessagesService {
@@ -30,14 +31,25 @@ export class MessagesService {
     user: true,
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly messagesGateway: MessagesGateway,
+  ) {}
 
   async create(createMessageDto: CreateMessageDto) {
     try {
-      return await this.prisma.message.create({
+      const message = await this.prisma.message.create({
         include: this.includeOptions,
         data: createMessageDto,
       });
+
+      // Broadcast the new message to all clients in the channel
+      this.messagesGateway.broadcastMessageCreated({
+        channelId: message.channelId,
+        message,
+      });
+
+      return message;
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
@@ -49,12 +61,20 @@ export class MessagesService {
     }
   }
 
-  async findAll() {
+  async findAll(channelId?: number, page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+
     return await this.prisma.message.findMany({
       include: this.includeOptions,
       where: {
+        channelId,
         deletedAt: null,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: limit,
     });
   }
 
@@ -74,7 +94,7 @@ export class MessagesService {
 
   async update(id: number, updateMessageDto: UpdateMessageDto) {
     try {
-      return await this.prisma.message.update({
+      const message = await this.prisma.message.update({
         include: this.includeOptions,
         where: {
           deletedAt: null,
@@ -82,6 +102,14 @@ export class MessagesService {
         },
         data: updateMessageDto,
       });
+
+      // Broadcast the updated message
+      this.messagesGateway.broadcastMessageUpdated({
+        channelId: message.channelId,
+        message,
+      });
+
+      return message;
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
@@ -95,7 +123,7 @@ export class MessagesService {
 
   async remove(id: number) {
     try {
-      return await this.prisma.message.update({
+      const message = await this.prisma.message.update({
         include: this.includeOptions,
         where: {
           deletedAt: null,
@@ -105,6 +133,14 @@ export class MessagesService {
           deletedAt: new Date(),
         },
       });
+
+      // Broadcast the deletion
+      this.messagesGateway.broadcastMessageDeleted({
+        channelId: message.channelId,
+        messageId: message.id,
+      });
+
+      return message;
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&

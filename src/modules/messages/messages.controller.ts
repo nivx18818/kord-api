@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -22,8 +23,16 @@ export class MessagesController {
   }
 
   @Get()
-  findAll() {
-    return this.messagesService.findAll();
+  findAll(
+    @Query('channelId') channelId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.messagesService.findAll(
+      channelId ? +channelId : undefined,
+      page ? +page : 1,
+      limit ? +limit : 50,
+    );
   }
 
   @Get(':id')
