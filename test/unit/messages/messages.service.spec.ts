@@ -81,6 +81,7 @@ describe('MessagesService', () => {
         {
           clientVersion: '5.0.0',
           code: 'P2003',
+          meta: {},
         },
       );
 
@@ -102,12 +103,12 @@ describe('MessagesService', () => {
 
       const result = await service.findAll();
 
-      expect(result).toEqual(messages);
+      expect(result.items).toEqual(messages);
       expect(prisma.message.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
+          where: expect.objectContaining({
             deletedAt: null,
-          },
+          }),
         }),
       );
     });
@@ -135,9 +136,7 @@ describe('MessagesService', () => {
       prisma.message.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'Message with ID 999 not found',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('Message not found');
     });
   });
 

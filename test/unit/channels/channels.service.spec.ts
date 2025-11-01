@@ -108,9 +108,7 @@ describe('ChannelsService', () => {
       prisma.channel.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'Channel with ID 999 not found',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('Channel not found');
     });
   });
 

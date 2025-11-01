@@ -89,7 +89,7 @@ describe('AuthService', () => {
 
       // Act & Assert
       await expect(service.register(registerDto)).rejects.toThrow(
-        'Email already exists',
+        'Email already registered',
       );
       expect(prisma.user.create).not.toHaveBeenCalled();
     });
@@ -105,7 +105,7 @@ describe('AuthService', () => {
 
       // Act & Assert
       await expect(service.register(registerDto)).rejects.toThrow(
-        'Username already exists',
+        'Username already taken',
       );
       expect(prisma.user.create).not.toHaveBeenCalled();
     });
@@ -257,7 +257,7 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
       await expect(service.refresh(refreshToken)).rejects.toThrow(
-        'Invalid refresh token',
+        'Invalid or expired refresh token',
       );
     });
   });

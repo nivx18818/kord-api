@@ -64,6 +64,7 @@ describe('ServersService', () => {
         {
           clientVersion: '5.0.0',
           code: 'P2002',
+          meta: { target: ['servername'] },
         },
       );
 
@@ -73,7 +74,7 @@ describe('ServersService', () => {
         ConflictException,
       );
       await expect(service.create(createServerDto)).rejects.toThrow(
-        'Servername already exists',
+        'Servername already taken',
       );
     });
   });
@@ -82,11 +83,20 @@ describe('ServersService', () => {
     it('should return an array of servers with relations', async () => {
       const servers = [createMockServerWithRelations()];
       prisma.server.findMany.mockResolvedValue(servers);
+      prisma.server.count.mockResolvedValue(servers.length);
 
       const result = await service.findAll();
 
-      expect(result).toEqual(servers);
+      expect(result).toEqual({
+        hasMore: false,
+        items: servers,
+        limit: 10,
+        page: 1,
+        total: servers.length,
+        totalPages: 1,
+      });
       expect(prisma.server.findMany.mock.calls.length).toBeGreaterThan(0);
+      expect(prisma.server.count.mock.calls.length).toBeGreaterThan(0);
     });
   });
 
@@ -109,9 +119,7 @@ describe('ServersService', () => {
       prisma.server.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'Server with ID 999 not found',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('Server not found');
     });
   });
 
@@ -163,6 +171,7 @@ describe('ServersService', () => {
         {
           clientVersion: '5.0.0',
           code: 'P2002',
+          meta: { target: ['servername'] },
         },
       );
 

@@ -67,7 +67,7 @@ describe('UsersService', () => {
       );
     });
 
-    it('should throw ConflictException when username or email already exists', async () => {
+    it('should throw ConflictException when username already exists', async () => {
       const createUserDto: CreateUserDto = {
         dateOfBirth: '1990-01-01',
         email: 'test@example.com',
@@ -81,6 +81,7 @@ describe('UsersService', () => {
         {
           clientVersion: '5.0.0',
           code: 'P2002',
+          meta: { target: ['username'] },
         },
       );
 
@@ -90,7 +91,35 @@ describe('UsersService', () => {
         ConflictException,
       );
       await expect(service.create(createUserDto)).rejects.toThrow(
-        'Username or email already exists',
+        'Username already taken',
+      );
+    });
+
+    it('should throw ConflictException when email already exists', async () => {
+      const createUserDto: CreateUserDto = {
+        dateOfBirth: '1990-01-01',
+        email: 'test@example.com',
+        name: 'Test User',
+        password: 'password123',
+        username: 'testuser',
+      };
+
+      const prismaError = new PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        {
+          clientVersion: '5.0.0',
+          code: 'P2002',
+          meta: { target: ['email'] },
+        },
+      );
+
+      prisma.user.create.mockRejectedValue(prismaError);
+
+      await expect(service.create(createUserDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.create(createUserDto)).rejects.toThrow(
+        'Email already registered',
       );
     });
   });
@@ -99,10 +128,18 @@ describe('UsersService', () => {
     it('should return an array of users with profiles', async () => {
       const users = [createMockUserWithProfile()];
       prisma.user.findMany.mockResolvedValue(users);
+      prisma.user.count.mockResolvedValue(users.length);
 
       const result = await service.findAll();
 
-      expect(result).toEqual(users);
+      expect(result).toEqual({
+        hasMore: false,
+        items: users,
+        limit: 10,
+        page: 1,
+        total: users.length,
+        totalPages: 1,
+      });
       expect(prisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           include: {
@@ -110,6 +147,7 @@ describe('UsersService', () => {
           },
         }),
       );
+      expect(prisma.user.count).toHaveBeenCalled();
     });
   });
 
@@ -135,9 +173,7 @@ describe('UsersService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'User with ID 999 not found',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('User not found');
     });
   });
 
@@ -183,7 +219,28 @@ describe('UsersService', () => {
       );
     });
 
-    it('should throw ConflictException when updating to existing username/email', async () => {
+    it('should throw ConflictException when updating to existing username', async () => {
+      const updateUserDto: UpdateUserDto = {
+        username: 'existing',
+      };
+
+      const prismaError = new PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        {
+          clientVersion: '5.0.0',
+          code: 'P2002',
+          meta: { target: ['username'] },
+        },
+      );
+
+      prisma.user.update.mockRejectedValue(prismaError);
+
+      await expect(service.update(1, updateUserDto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw ConflictException when updating to existing email', async () => {
       const updateUserDto: UpdateUserDto = {
         email: 'existing@example.com',
       };
@@ -193,6 +250,7 @@ describe('UsersService', () => {
         {
           clientVersion: '5.0.0',
           code: 'P2002',
+          meta: { target: ['email'] },
         },
       );
 
