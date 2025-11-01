@@ -37,7 +37,7 @@ Enhance existing modules (Users, Servers, Channels, Messages, Roles) with new en
 - **New Models & Endpoints**:
   - Add `Invite` model to Prisma schema (serverId, code, expiresAt, createdBy).
   - Add `UserMute` model (userId, targetId, reason, timestamps).
-  - Add `ChannelBlock` model (userId, channelId, reason, timestamps).
+  - Add `ChannelBlock` model (userId, channelId, timestamps).
   - Add `POST /users/:id/mute` to mute users.
   - Migrate schema and regenerate Prisma client.
 

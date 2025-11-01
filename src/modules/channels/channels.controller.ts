@@ -54,11 +54,7 @@ export class ChannelsController {
 
   @Post(':id/block')
   blockDM(@Param('id') id: string, @Body() blockDMDto: BlockDMDto) {
-    return this.channelsService.blockDM(
-      blockDMDto.userId,
-      +id,
-      blockDMDto.reason,
-    );
+    return this.channelsService.blockDM(blockDMDto.userId, +id);
   }
 
   @Delete(':id/block/:userId')

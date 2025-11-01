@@ -133,7 +133,7 @@ export class ChannelsService {
     }
   }
 
-  async blockDM(userId: number, channelId: number, reason?: string) {
+  async blockDM(userId: number, channelId: number) {
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
     });
@@ -150,7 +150,6 @@ export class ChannelsService {
       return await this.prisma.channelBlock.create({
         data: {
           channelId,
-          reason,
           userId,
         },
       });

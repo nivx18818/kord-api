@@ -220,8 +220,7 @@ model UserMute {
 }
 
 model ChannelBlock {
-  id        Int     @id @default(autoincrement())
-  reason    String?
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
