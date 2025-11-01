@@ -91,4 +91,5 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Follow NestJS conventions (controllers expose routes, services handle business logic, modules wire dependencies).
 - Adhere to repository ESLint/Prettier settings for consistency.
 - TypeScript is compiled with the NodeNext module system per `tsconfig.json`; imports must use ESM syntax even when targeting CommonJS consumers.
+- Use alias imports to avoid relative path hell (e.g., `import { UsersService } from '@/modules/users/users.service'`).
 - Read the `docs/` directory for project plans and diagrams as needed.
