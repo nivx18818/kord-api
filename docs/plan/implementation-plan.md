@@ -58,6 +58,34 @@ These are broken into phases from the plans. Focus on one phase at a time for si
 - [x] Add typing indicators: WebSocket event `user.typing` per channel (emit on keypress, clear after timeout).
 - [x] Add muting/blocking: New models (e.g., `UserMute` for muted users, `ChannelBlock` for blocked DMs); endpoints to mute/block (`POST /users/:id/mute`, `POST /channels/:id/block` for DMs).
 
+**Phase 2.5: Response Structure & Error Handling**
+
+This phase focuses on implementing consistent API response formats and comprehensive error handling across all modules.
+
+- [x] Design and implement error code system with 5-digit codes (pattern: `[HTTP_STATUS][CATEGORY][SEQUENCE]`).
+- [x] Create 60+ error codes in `src/common/constants/error-codes.ts` with `ErrorCode` enum and `ErrorMessages` mapping.
+- [x] Implement 40+ custom exception classes in `src/common/exceptions/kord.exceptions.ts` extending NestJS base exceptions.
+- [x] Create pagination DTOs (`CursorPaginationDto`, `OffsetPaginationDto`, `MessagePaginationDto`, `SearchPaginationDto`) with response builder helpers.
+- [x] Implement global HTTP exception filter (`HttpExceptionFilter`) handling Prisma errors, validation errors, and standard exceptions.
+- [x] Register global exception filter in `AppModule` via `APP_FILTER` provider.
+- [x] Update `UsersService` with custom exceptions (replace all `NotFoundException`/`ConflictException` with specific typed exceptions).
+- [x] Add offset pagination to `UsersController.findAll()` method with `OffsetPaginationDto`.
+- [x] Clean up code style in `src/common/` folder (removed excessive comments and marketing language).
+- [x] Update `ServersService` with custom exceptions (`ServerNotFoundException`, `ServernameAlreadyExistsException`, etc.).
+- [x] Add offset pagination to `ServersController.findAll()` method.
+- [x] Update `ChannelsService` with custom exceptions (`ChannelNotFoundException`, `ServerNotFoundException`).
+- [x] Create `WsExceptionFilter` for consistent WebSocket error handling with Socket.io typing.
+- [ ] Register `WsExceptionFilter` in `MessagesGateway` using `@UseFilters` decorator.
+- [ ] Update `MessagesService` with custom exceptions (`MessageNotFoundException`, `ChannelNotFoundException`).
+- [ ] Add cursor-based pagination to `MessagesService.findAll()` using `MessagePaginationDto` and `buildCursorPaginatedResponse()`.
+- [ ] Update `MessagesController.findAll()` to accept `MessagePaginationDto` query parameters.
+- [ ] Update `RolesService` with custom exceptions (`RoleNotFoundException`, `AlreadyHasRoleException`).
+- [ ] Update `AttachmentsService` with custom exceptions (`AttachmentNotFoundException`, `MessageNotFoundException`).
+- [ ] Update `ReactionsService` with custom exceptions (`MessageNotFoundException`, `AlreadyReactedException`).
+- [ ] Update `MembershipsService` with custom exceptions (`UserNotFoundException`, `NotMemberOfServerException`, `AlreadyMemberOfServerException`).
+- [ ] Add `OffsetPaginationDto` to remaining controller `findAll()` methods (roles, attachments, reactions, memberships).
+- [ ] Run comprehensive tests: Build verification, pagination endpoints, validation error format, WebSocket error format.
+
 **Phase 3: Authorization**
 
 - [ ] Define Permissions enum in `src/shared`.
