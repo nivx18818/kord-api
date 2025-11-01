@@ -36,9 +36,10 @@ export class RolesService {
     }
   }
 
-  async findAll() {
+  async findAll(serverId?: number) {
     return await this.prisma.role.findMany({
       include: this.includeOptions,
+      where: serverId ? { serverId } : undefined,
     });
   }
 

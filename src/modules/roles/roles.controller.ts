@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -22,8 +23,8 @@ export class RolesController {
   }
 
   @Get()
-  findAll() {
-    return this.rolesService.findAll();
+  findAll(@Query('serverId') serverId?: string) {
+    return this.rolesService.findAll(serverId ? +serverId : undefined);
   }
 
   @Get(':id')
