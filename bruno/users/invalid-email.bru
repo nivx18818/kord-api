@@ -26,8 +26,12 @@ tests {
   });
 
   test("Response should indicate validation error for email", function () {
-    expect(res.getBody().message.some(
-      (msg) => msg.includes("email")
-    )).to.be.true;
+    const body = res.getBody();
+    expect(body.code).to.equal(40001);
+    expect(body.message).to.equal("Validation failed");
+    expect(body.errors).to.have.property("email");
+    expect(body.errors.email).to.be.an("array");
+    expect(body.errors.email[0]).to.have.property("code");
+    expect(body.errors.email[0].code).to.equal("EMAIL_FORMAT_INVALID");
   });
 }

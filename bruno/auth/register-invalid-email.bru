@@ -29,10 +29,10 @@ tests {
   });
 
   test("Response should indicate validation error", function () {
-    const messages = res.getBody().message;
-    const hasEmailError = messages.some(msg =>
-      msg.includes("email") || msg.includes("Email")
-    );
-    expect(hasEmailError).to.be.true;
+    const body = res.getBody();
+    expect(body.code).to.equal(40001);
+    expect(body.message).to.equal("Validation failed");
+    expect(body.errors).to.have.property("email");
+    expect(body.errors.email).to.be.an("array");
   });
 }

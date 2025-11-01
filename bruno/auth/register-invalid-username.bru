@@ -29,10 +29,10 @@ tests {
   });
 
   test("Response should indicate username validation error", function () {
-    const messages = res.getBody().message;
-    const hasUsernameError = messages.some(msg =>
-      msg.includes("Username can only contain letters, numbers, underscores, and periods")
-    );
-    expect(hasUsernameError).to.be.true;
+    const body = res.getBody();
+    expect(body.code).to.equal(40001);
+    expect(body.message).to.equal("Validation failed");
+    expect(body.errors).to.have.property("username");
+    expect(body.errors.username).to.be.an("array");
   });
 }
