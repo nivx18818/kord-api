@@ -6,7 +6,10 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
+
+import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { MuteUserDto } from './dto/mute-user.dto';
@@ -23,8 +26,8 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() pagination: OffsetPaginationDto) {
+    return this.usersService.findAll(pagination);
   }
 
   @Get(':id')

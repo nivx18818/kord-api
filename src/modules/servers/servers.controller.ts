@@ -9,6 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
+
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { CreateServerDto } from './dto/create-server.dto';
 import { RedeemInviteDto } from './dto/redeem-invite.dto';
@@ -37,11 +39,14 @@ export class ServersController {
   }
 
   @Get()
-  findAll(@Query('userId') userId?: string) {
+  findAll(
+    @Query() pagination: OffsetPaginationDto,
+    @Query('userId') userId?: string,
+  ) {
     if (userId) {
       return this.serversService.findByUserId(+userId);
     }
-    return this.serversService.findAll();
+    return this.serversService.findAll(pagination);
   }
 
   @Get(':id')

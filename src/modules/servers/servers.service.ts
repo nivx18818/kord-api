@@ -1,11 +1,18 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 import { nanoid } from 'nanoid';
+
+import {
+  buildOffsetPaginatedResponse,
+  OffsetPaginationDto,
+} from '@/common/dto/pagination.dto';
+import {
+  AlreadyMemberOfServerException,
+  InviteNotFoundException,
+  KordForbiddenException,
+  ServernameAlreadyExistsException,
+  ServerNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServerDto } from './dto/create-server.dto';
@@ -37,7 +44,7 @@ export class ServersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Servername already exists');
+        throw new ServernameAlreadyExistsException(createServerDto.servername);
       }
       throw error;
     }
@@ -53,7 +60,7 @@ export class ServersService {
     });
 
     if (!server) {
-      throw new NotFoundException(`Server with ID ${serverId} not found`);
+      throw new ServerNotFoundException(serverId);
     }
 
     const code = nanoid(10);
@@ -71,10 +78,21 @@ export class ServersService {
     });
   }
 
-  async findAll() {
-    return await this.prisma.server.findMany({
-      include: this.includeOptions,
-    });
+  async findAll(pagination: OffsetPaginationDto = {}) {
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.server.findMany({
+        include: this.includeOptions,
+        skip,
+        take: limit,
+      }),
+      this.prisma.server.count(),
+    ]);
+
+    return buildOffsetPaginatedResponse(items, page, limit, total);
   }
 
   async findByUserId(userId: number) {
@@ -96,7 +114,7 @@ export class ServersService {
       where: { id },
     });
     if (!server) {
-      throw new NotFoundException(`Server with ID ${id} not found`);
+      throw new ServerNotFoundException(id);
     }
     return server;
   }
@@ -107,7 +125,7 @@ export class ServersService {
     });
 
     if (!server) {
-      throw new NotFoundException(`Server with ID ${serverId} not found`);
+      throw new ServerNotFoundException(serverId);
     }
 
     return await this.prisma.invite.findMany({
@@ -136,13 +154,18 @@ export class ServersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Server with ID ${id} not found`);
+        throw new ServerNotFoundException(id);
       }
       if (
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Servername already exists');
+        const target = error.meta?.target as string[] | undefined;
+        if (target?.[0] === 'servername' && updateServerDto.servername) {
+          throw new ServernameAlreadyExistsException(
+            updateServerDto.servername,
+          );
+        }
       }
       throw error;
     }
@@ -154,11 +177,11 @@ export class ServersService {
     });
 
     if (!invite) {
-      throw new NotFoundException('Invite not found');
+      throw new InviteNotFoundException(code);
     }
 
     if (invite.serverId !== serverId) {
-      throw new ForbiddenException('Invite does not belong to this server');
+      throw new KordForbiddenException('Invite does not belong to this server');
     }
 
     return await this.prisma.invite.delete({
@@ -176,7 +199,7 @@ export class ServersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Server with ID ${id} not found`);
+        throw new ServerNotFoundException(id);
       }
       throw error;
     }
@@ -191,14 +214,13 @@ export class ServersService {
     });
 
     if (!invite) {
-      throw new NotFoundException('Invite not found');
+      throw new InviteNotFoundException(code);
     }
 
     if (invite.expiresAt && invite.expiresAt < new Date()) {
-      throw new ForbiddenException('Invite has expired');
+      throw new KordForbiddenException('Invite has expired');
     }
 
-    // Check if user is already a member
     const existingMembership = await this.prisma.membership.findUnique({
       where: {
         userId_serverId: {
@@ -209,10 +231,9 @@ export class ServersService {
     });
 
     if (existingMembership) {
-      throw new ConflictException('User is already a member of this server');
+      throw new AlreadyMemberOfServerException(userId, invite.serverId);
     }
 
-    // Add user to server
     return await this.prisma.membership.create({
       include: {
         role: true,

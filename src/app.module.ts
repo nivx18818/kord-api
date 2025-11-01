@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AppController } from './app.controller';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ErrorsInterceptor } from './common/interceptors/errors.interceptor';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -31,6 +32,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
   ],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ErrorsInterceptor,

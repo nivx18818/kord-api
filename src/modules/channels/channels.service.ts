@@ -1,9 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  ChannelNotFoundException,
+  ServerNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
@@ -51,7 +52,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new NotFoundException('Server not found');
+        throw new ServerNotFoundException(createChannelDto.serverId);
       }
       throw error;
     }
@@ -69,7 +70,7 @@ export class ChannelsService {
       where: { id },
     });
     if (!channel) {
-      throw new NotFoundException(`Channel with ID ${id} not found`);
+      throw new ChannelNotFoundException(id);
     }
     return channel;
   }
@@ -150,7 +151,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Channel with ID ${id} not found`);
+        throw new ChannelNotFoundException(id);
       }
       throw error;
     }
@@ -166,7 +167,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Channel with ID ${id} not found`);
+        throw new ChannelNotFoundException(id);
       }
       throw error;
     }
@@ -187,7 +188,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException('Participant not found');
+        throw new BadRequestException('Participant not found');
       }
       throw error;
     }
@@ -199,7 +200,7 @@ export class ChannelsService {
     });
 
     if (!channel) {
-      throw new NotFoundException(`Channel with ID ${channelId} not found`);
+      throw new ChannelNotFoundException(channelId);
     }
 
     try {
@@ -214,7 +215,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('User is already a participant');
+        throw new BadRequestException('User is already a participant');
       }
       throw error;
     }
@@ -226,11 +227,11 @@ export class ChannelsService {
     });
 
     if (!channel) {
-      throw new NotFoundException(`Channel with ID ${channelId} not found`);
+      throw new ChannelNotFoundException(channelId);
     }
 
     if (!channel.isDM) {
-      throw new ConflictException('Can only block DM channels');
+      throw new BadRequestException('Can only block DM channels');
     }
 
     try {
@@ -245,7 +246,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('DM already blocked');
+        throw new BadRequestException('DM already blocked');
       }
       throw error;
     }
@@ -257,7 +258,7 @@ export class ChannelsService {
     });
 
     if (!block) {
-      throw new NotFoundException('DM block not found');
+      throw new BadRequestException('DM block not found');
     }
 
     return await this.prisma.channelBlock.delete({

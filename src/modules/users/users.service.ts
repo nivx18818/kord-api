@@ -1,9 +1,15 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  buildOffsetPaginatedResponse,
+  OffsetPaginationDto,
+} from '@/common/dto/pagination.dto';
+import {
+  EmailAlreadyExistsException,
+  UsernameAlreadyExistsException,
+  UserNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,18 +32,36 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Username or email already exists');
+        const target = error.meta?.target as string[] | undefined;
+        const field = target?.[0];
+
+        if (field === 'email') {
+          throw new EmailAlreadyExistsException(createUserDto.email);
+        } else if (field === 'username') {
+          throw new UsernameAlreadyExistsException(createUserDto.username);
+        }
       }
       throw error;
     }
   }
 
-  async findAll() {
-    return await this.prisma.user.findMany({
-      include: {
-        profile: true,
-      },
-    });
+  async findAll(pagination: OffsetPaginationDto = {}) {
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        include: {
+          profile: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return buildOffsetPaginatedResponse(items, page, limit, total);
   }
 
   async findOne(id: number) {
@@ -48,7 +72,7 @@ export class UsersService {
       where: { id },
     });
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new UserNotFoundException(id);
     }
     return user;
   }
@@ -67,7 +91,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new UserNotFoundException(userId);
     }
 
     return user.UserServer.map((membership) => ({
@@ -107,13 +131,20 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
+        throw new UserNotFoundException(id);
       }
       if (
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Username or email already exists');
+        const target = error.meta?.target as string[] | undefined;
+        const field = target?.[0];
+
+        if (field === 'email' && updateUserDto.email) {
+          throw new EmailAlreadyExistsException(updateUserDto.email);
+        } else if (field === 'username' && updateUserDto.username) {
+          throw new UsernameAlreadyExistsException(updateUserDto.username);
+        }
       }
       throw error;
     }
@@ -129,7 +160,7 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`User with ID ${id} not found`);
+        throw new UserNotFoundException(id);
       }
       throw error;
     }
@@ -137,7 +168,7 @@ export class UsersService {
 
   async muteUser(userId: number, targetId: number, reason?: string) {
     if (userId === targetId) {
-      throw new ConflictException('Cannot mute yourself');
+      throw new BadRequestException('Cannot mute yourself');
     }
 
     // Check if both users exist
@@ -147,10 +178,10 @@ export class UsersService {
     ]);
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
+      throw new UserNotFoundException(userId);
     }
     if (!target) {
-      throw new NotFoundException(`Target user with ID ${targetId} not found`);
+      throw new UserNotFoundException(targetId);
     }
 
     try {
@@ -166,7 +197,7 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('User already muted');
+        throw new BadRequestException('User already muted');
       }
       throw error;
     }
@@ -178,7 +209,7 @@ export class UsersService {
     });
 
     if (!mute) {
-      throw new NotFoundException('Mute not found');
+      throw new BadRequestException('Mute not found');
     }
 
     return await this.prisma.userMute.delete({
