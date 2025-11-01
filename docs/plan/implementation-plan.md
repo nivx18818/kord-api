@@ -45,18 +45,18 @@ These are broken into phases from the plans. Focus on one phase at a time for si
 
 **Phase 2: App Flows**
 
-- [ ] Enhance `UsersController:` Auto-create profile on register.
-- [ ] Add filters: `GET /servers?userId=:id` (user's joined servers via memberships).
-- [ ] Add DM auto-creation logic in `ChannelsService` (when starting private chat).
-- [ ] Implement pagination in `MessagesService` (use `take`/`skip`, `?page`/`?limit` queries).
-- [ ] Filter messages by `deletedAt=null` in `findAll`/`findOne`.
-- [ ] Add `?serverId=:id` filter to `RolesController`.
-- [ ] Set up basic WebSocket gateway for real-time (e.g., broadcast new messages to channel rooms).
-- [ ] Update DTOs for any new fields (e.g., optional params).
-- [ ] Add global error handling (interceptor for 401/403).
-- [ ] Add invites/joining servers: Endpoint to create invite links (e.g., `POST /servers/:id/invites`) and redeem them (e.g., `POST /invites/:code/join`) for public/restricted servers.
-- [ ] Add typing indicators: WebSocket event `user.typing` per channel (emit on keypress, clear after timeout).
-- [ ] Add muting/blocking: New models (e.g., `UserMute` for muted users, `ChannelBlock` for blocked DMs); endpoints to mute/block (`POST /users/:id/mute`, `POST /channels/:id/block`).
+- [x] Enhance `UsersController:` Auto-create profile on register.
+- [x] Add filters: `GET /servers?userId=:id` (user's joined servers via memberships).
+- [x] Add DM auto-creation logic in `ChannelsService` (when starting private chat).
+- [x] Implement pagination in `MessagesService` (use `take`/`skip`, `?page`/`?limit` queries).
+- [x] Filter messages by `deletedAt=null` in `findAll`/`findOne`.
+- [x] Add `?serverId=:id` filter to `RolesController`.
+- [x] Set up basic WebSocket gateway for real-time (e.g., broadcast new messages to channel rooms).
+- [x] Update DTOs for any new fields (e.g., optional params).
+- [x] Add global error handling (interceptor for 401/403).
+- [x] Add invites/joining servers: Endpoint to create invite links (e.g., `POST /servers/:id/invites`) and redeem them (e.g., `POST /invites/:code/join`) for public/restricted servers.
+- [x] Add typing indicators: WebSocket event `user.typing` per channel (emit on keypress, clear after timeout).
+- [x] Add muting/blocking: New models (e.g., `UserMute` for muted users, `ChannelBlock` for blocked DMs); endpoints to mute/block (`POST /users/:id/mute`, `POST /channels/:id/block`).
 
 **Phase 3: Authorization**
 
