@@ -1,3 +1,4 @@
+import { UseFilters } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,6 +9,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+
+import { WsExceptionFilter } from '@/common/filters/ws-exception.filter';
 
 interface MessageCreatedPayload {
   channelId: number;
@@ -20,6 +23,7 @@ interface TypingPayload {
   username: string;
 }
 
+@UseFilters(new WsExceptionFilter())
 @WebSocketGateway()
 export class MessagesGateway
   implements OnGatewayConnection, OnGatewayDisconnect

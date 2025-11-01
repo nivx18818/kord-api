@@ -1,5 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Message } from 'generated/prisma';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  buildCursorPaginatedResponse,
+  MessagePaginationDto,
+} from '@/common/dto/pagination.dto';
+import {
+  ChannelNotFoundException,
+  MessageNotFoundException,
+  UserNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -55,27 +66,60 @@ export class MessagesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new NotFoundException('User or channel not found');
+        const meta = error.meta as { field_name?: string };
+        if (meta?.field_name?.includes('userId')) {
+          throw new UserNotFoundException(createMessageDto.userId);
+        }
+        throw new ChannelNotFoundException(createMessageDto.channelId);
       }
       throw error;
     }
   }
 
-  async findAll(channelId?: number, page = 1, limit = 50) {
-    const skip = (page - 1) * limit;
+  async findAll(channelId?: number, pagination?: MessagePaginationDto) {
+    const limit = pagination?.limit ?? 50;
+    const after = pagination?.after ? new Date(pagination.after) : undefined;
+    const before = pagination?.before ? new Date(pagination.before) : undefined;
 
-    return await this.prisma.message.findMany({
+    const messages = await this.prisma.message.findMany({
       include: this.includeOptions,
       where: {
         channelId,
         deletedAt: null,
+        ...(after && {
+          createdAt: {
+            lt: after,
+          },
+        }),
+        ...(before && {
+          createdAt: {
+            gt: before,
+          },
+        }),
       },
       orderBy: {
         createdAt: 'desc',
       },
-      skip,
-      take: limit,
+      take: limit + 1,
     });
+
+    const hasMore = messages.length > limit;
+    const items = hasMore ? messages.slice(0, limit) : messages;
+
+    const newAfter =
+      items.length > 0
+        ? items[items.length - 1]?.createdAt?.toISOString()
+        : undefined;
+    const newBefore =
+      items.length > 0 ? items[0]?.createdAt?.toISOString() : undefined;
+
+    return buildCursorPaginatedResponse<Message>(
+      items,
+      limit,
+      hasMore,
+      newBefore,
+      newAfter,
+    );
   }
 
   async findOne(id: number) {
@@ -87,7 +131,7 @@ export class MessagesService {
       },
     });
     if (!message) {
-      throw new NotFoundException(`Message with ID ${id} not found`);
+      throw new MessageNotFoundException(id);
     }
     return message;
   }
@@ -115,7 +159,7 @@ export class MessagesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Message with ID ${id} not found`);
+        throw new MessageNotFoundException(id);
       }
       throw error;
     }
@@ -146,7 +190,7 @@ export class MessagesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Message with ID ${id} not found`);
+        throw new MessageNotFoundException(id);
       }
       throw error;
     }

@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  AttachmentNotFoundException,
+  MessageNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAttachmentDto } from './dto/create-attachment.dto';
@@ -24,7 +29,7 @@ export class AttachmentsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new NotFoundException('Message not found');
+        throw new MessageNotFoundException(createAttachmentDto.messageId);
       }
       throw error;
     }
@@ -42,7 +47,7 @@ export class AttachmentsService {
       where: { id },
     });
     if (!attachment) {
-      throw new NotFoundException(`Attachment with ID ${id} not found`);
+      throw new AttachmentNotFoundException(id);
     }
     return attachment;
   }
@@ -59,7 +64,7 @@ export class AttachmentsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Attachment with ID ${id} not found`);
+        throw new AttachmentNotFoundException(id);
       }
       throw error;
     }
@@ -75,7 +80,7 @@ export class AttachmentsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Attachment with ID ${id} not found`);
+        throw new AttachmentNotFoundException(id);
       }
       throw error;
     }

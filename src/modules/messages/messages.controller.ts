@@ -9,6 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { MessagePaginationDto } from '@/common/dto/pagination.dto';
+
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { MessagesService } from './messages.service';
@@ -25,13 +27,11 @@ export class MessagesController {
   @Get()
   findAll(
     @Query('channelId') channelId?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() pagination?: MessagePaginationDto,
   ) {
     return this.messagesService.findAll(
       channelId ? +channelId : undefined,
-      page ? +page : 1,
-      limit ? +limit : 50,
+      pagination,
     );
   }
 

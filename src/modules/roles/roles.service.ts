@@ -1,5 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+
+import {
+  RoleNotFoundException,
+  ServerNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -30,7 +35,7 @@ export class RolesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new NotFoundException('Server not found');
+        throw new ServerNotFoundException(createRoleDto.serverId);
       }
       throw error;
     }
@@ -49,7 +54,7 @@ export class RolesService {
       where: { id },
     });
     if (!role) {
-      throw new NotFoundException(`Role with ID ${id} not found`);
+      throw new RoleNotFoundException(id);
     }
     return role;
   }
@@ -66,7 +71,7 @@ export class RolesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Role with ID ${id} not found`);
+        throw new RoleNotFoundException(id);
       }
       throw error;
     }
@@ -82,7 +87,7 @@ export class RolesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new NotFoundException(`Role with ID ${id} not found`);
+        throw new RoleNotFoundException(id);
       }
       throw error;
     }
