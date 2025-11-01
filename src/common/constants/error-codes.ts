@@ -97,7 +97,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.ROLE_NOT_FOUND]: 'Role not found',
   [ErrorCode.SERVER_ACCESS_DENIED]: 'You do not have access to this server',
   [ErrorCode.SERVER_NOT_FOUND]: 'Server not found',
-  [ErrorCode.SERVERNAME_ALREADY_EXISTS]: 'Server name already taken',
+  [ErrorCode.SERVERNAME_ALREADY_EXISTS]: 'Servername already taken',
   [ErrorCode.TOKEN_EXPIRED]: 'Authentication token has expired',
   [ErrorCode.TOO_MANY_MESSAGES]: 'Too many messages sent',
   [ErrorCode.TOO_MANY_REQUESTS]: 'Too many requests',
