@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { ChannelsService } from './channels.service';
+import { AddParticipantDto } from './dto/add-participant.dto';
 import { BlockDMDto } from './dto/block-dm.dto';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { FindOrCreateDMDto } from './dto/find-or-create-dm.dto';
@@ -42,6 +43,11 @@ export class ChannelsController {
     );
   }
 
+  @Get('user/:userId/dms')
+  getUserDMs(@Param('userId') userId: string) {
+    return this.channelsService.getUserDMs(+userId);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateChannelDto: UpdateChannelDto) {
     return this.channelsService.update(+id, updateChannelDto);
@@ -50,6 +56,19 @@ export class ChannelsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.channelsService.remove(+id);
+  }
+
+  @Delete(':id/participants/:userId')
+  removeParticipant(@Param('id') id: string, @Param('userId') userId: string) {
+    return this.channelsService.removeParticipant(+id, +userId);
+  }
+
+  @Post(':id/participants')
+  addParticipant(
+    @Param('id') id: string,
+    @Body() addParticipantDto: AddParticipantDto,
+  ) {
+    return this.channelsService.addParticipant(+id, addParticipantDto.userId);
   }
 
   @Post(':id/block')

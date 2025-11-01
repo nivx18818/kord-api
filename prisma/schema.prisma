@@ -19,15 +19,16 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  profile        Profile?
-  Message        Message[]
-  UserServer     Membership[]
-  ReactsMessage  Reaction[]
-  refreshTokens  RefreshToken[]
-  invites        Invite[]
-  mutedBy        UserMute[]     @relation("MutedBy")
-  mutedUsers     UserMute[]     @relation("MutedUsers")
-  channelBlocks  ChannelBlock[]
+  profile            Profile?
+  Message            Message[]
+  UserServer         Membership[]
+  ReactsMessage      Reaction[]
+  refreshTokens      RefreshToken[]
+  invites            Invite[]
+  mutedBy            UserMute[]           @relation("MutedBy")
+  mutedUsers         UserMute[]           @relation("MutedUsers")
+  channelBlocks      ChannelBlock[]
+  channelParticipant ChannelParticipant[]
 
   @@index([createdAt])
   @@map("users")
@@ -94,10 +95,11 @@ model Channel {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  serverId      Int            @map("server_id")
-  server        Server         @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  messages      Message[]
-  channelBlocks ChannelBlock[]
+  serverId       Int                  @map("server_id")
+  server         Server               @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages       Message[]
+  channelBlocks  ChannelBlock[]
+  participants   ChannelParticipant[]
 
   @@index([isDM, createdAt, serverId])
   @@map("channels")
@@ -233,6 +235,21 @@ model ChannelBlock {
   @@index([userId])
   @@index([channelId])
   @@map("channel_blocks")
+}
+
+model ChannelParticipant {
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId    Int     @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId Int     @map("channel_id")
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@id([userId, channelId])
+  @@index([channelId])
+  @@index([userId])
+  @@map("channel_participants")
 }
 
 enum ChannelType {
