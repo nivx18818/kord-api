@@ -297,23 +297,52 @@ export class ServersService {
       throw new AlreadyMemberOfServerException(userId, invite.serverId);
     }
 
-    return await this.prisma.membership.create({
-      include: {
-        role: true,
-        server: true,
-        user: {
-          select: {
-            email: true,
-            id: true,
-            name: true,
-            username: true,
+    return await this.prisma.$transaction(async (tx) => {
+      // Find or create a default "Member" role for this server
+      let memberRole = await tx.role.findFirst({
+        where: {
+          name: 'Member',
+          serverId: invite.serverId,
+        },
+      });
+
+      if (!memberRole) {
+        // Create default "Member" role with basic permissions
+        memberRole = await tx.role.create({
+          data: {
+            name: 'Member',
+            permissions: JSON.stringify({
+              addReactions: true,
+              connectVoice: true,
+              sendMessages: true,
+              speakVoice: true,
+              viewChannels: true,
+            }),
+            serverId: invite.serverId,
+          },
+        });
+      }
+
+      // Create membership with the Member role
+      return await tx.membership.create({
+        include: {
+          role: true,
+          server: true,
+          user: {
+            select: {
+              email: true,
+              id: true,
+              name: true,
+              username: true,
+            },
           },
         },
-      },
-      data: {
-        serverId: invite.serverId,
-        userId,
-      },
+        data: {
+          roleId: memberRole.id,
+          serverId: invite.serverId,
+          userId,
+        },
+      });
     });
   }
 }

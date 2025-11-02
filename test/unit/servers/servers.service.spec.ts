@@ -260,4 +260,218 @@ describe('ServersService', () => {
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('redeemInvite', () => {
+    it('should redeem invite and assign default Member role', async () => {
+      const inviteCode = 'test-code-123';
+      const userId = 2;
+      const serverId = 1;
+
+      const mockInvite = {
+        code: inviteCode,
+        createdAt: new Date(),
+        createdBy: 1,
+        expiresAt: null,
+        id: 1,
+        server: mockServer,
+        serverId,
+        updatedAt: new Date(),
+      };
+
+      const mockMemberRole = {
+        id: 2,
+        name: 'Member',
+        permissions: JSON.stringify({
+          addReactions: true,
+          connectVoice: true,
+          sendMessages: true,
+          speakVoice: true,
+          viewChannels: true,
+        }),
+        serverId,
+      };
+
+      const mockMembership = {
+        role: mockMemberRole,
+        roleId: mockMemberRole.id,
+        server: mockServer,
+        serverId,
+        user: {
+          email: 'user2@test.com',
+          id: userId,
+          name: 'User 2',
+          username: 'user2',
+        },
+        userId,
+      };
+
+      prisma.invite.findUnique.mockResolvedValue(mockInvite);
+      prisma.membership.findUnique.mockResolvedValue(null);
+
+      // Mock transaction
+      // eslint-disable-next-line @typescript-eslint/require-await
+      prisma.$transaction.mockImplementation(async (callback: any) => {
+        const mockTx = {
+          membership: {
+            create: jest.fn().mockResolvedValue(mockMembership),
+          },
+          role: {
+            create: jest.fn().mockResolvedValue(mockMemberRole),
+            findFirst: jest.fn().mockResolvedValue(null), // No existing Member role
+          },
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        return callback(mockTx);
+      });
+
+      const result = await service.redeemInvite(inviteCode, userId);
+
+      expect(result).toEqual(mockMembership);
+      expect(prisma.invite.findUnique).toHaveBeenCalledWith({
+        include: { server: true },
+        where: { code: inviteCode },
+      });
+      expect(prisma.membership.findUnique).toHaveBeenCalledWith({
+        where: {
+          userId_serverId: {
+            serverId,
+            userId,
+          },
+        },
+      });
+    });
+
+    it('should use existing Member role when available', async () => {
+      const inviteCode = 'test-code-123';
+      const userId = 2;
+      const serverId = 1;
+
+      const mockInvite = {
+        code: inviteCode,
+        createdAt: new Date(),
+        createdBy: 1,
+        expiresAt: null,
+        id: 1,
+        server: mockServer,
+        serverId,
+        updatedAt: new Date(),
+      };
+
+      const mockExistingMemberRole = {
+        id: 5,
+        name: 'Member',
+        permissions: JSON.stringify({
+          addReactions: true,
+          connectVoice: true,
+          sendMessages: true,
+          speakVoice: true,
+          viewChannels: true,
+        }),
+        serverId,
+      };
+
+      const mockMembership = {
+        role: mockExistingMemberRole,
+        roleId: mockExistingMemberRole.id,
+        server: mockServer,
+        serverId,
+        user: {
+          email: 'user2@test.com',
+          id: userId,
+          name: 'User 2',
+          username: 'user2',
+        },
+        userId,
+      };
+
+      prisma.invite.findUnique.mockResolvedValue(mockInvite);
+      prisma.membership.findUnique.mockResolvedValue(null);
+
+      // Mock transaction
+      // eslint-disable-next-line @typescript-eslint/require-await
+      prisma.$transaction.mockImplementation(async (callback: any) => {
+        const mockTx = {
+          membership: {
+            create: jest.fn().mockResolvedValue(mockMembership),
+          },
+          role: {
+            create: jest.fn(), // Should not be called
+            findFirst: jest.fn().mockResolvedValue(mockExistingMemberRole), // Existing Member role found
+          },
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        return callback(mockTx);
+      });
+
+      const result = await service.redeemInvite(inviteCode, userId);
+
+      expect(result).toEqual(mockMembership);
+      expect(result.roleId).toBe(mockExistingMemberRole.id);
+    });
+
+    it('should throw NotFoundException when invite does not exist', async () => {
+      const inviteCode = 'non-existent';
+      const userId = 2;
+
+      prisma.invite.findUnique.mockResolvedValue(null);
+
+      await expect(service.redeemInvite(inviteCode, userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw error when invite has expired', async () => {
+      const inviteCode = 'expired-code';
+      const userId = 2;
+
+      const expiredInvite = {
+        code: inviteCode,
+        createdAt: new Date(),
+        createdBy: 1,
+        expiresAt: new Date(Date.now() - 1000), // Expired 1 second ago
+        id: 1,
+        server: mockServer,
+        serverId: 1,
+        updatedAt: new Date(),
+      };
+
+      prisma.invite.findUnique.mockResolvedValue(expiredInvite);
+
+      await expect(service.redeemInvite(inviteCode, userId)).rejects.toThrow(
+        'Invite has expired',
+      );
+    });
+
+    it('should throw error when user is already a member', async () => {
+      const inviteCode = 'test-code';
+      const userId = 2;
+      const serverId = 1;
+
+      const mockInvite = {
+        code: inviteCode,
+        createdAt: new Date(),
+        createdBy: 1,
+        expiresAt: null,
+        id: 1,
+        server: mockServer,
+        serverId,
+        updatedAt: new Date(),
+      };
+
+      const existingMembership = {
+        createdAt: new Date(),
+        roleId: 1,
+        serverId,
+        updatedAt: new Date(),
+        userId,
+      };
+
+      prisma.invite.findUnique.mockResolvedValue(mockInvite);
+      prisma.membership.findUnique.mockResolvedValue(existingMembership);
+
+      await expect(service.redeemInvite(inviteCode, userId)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+  });
 });
