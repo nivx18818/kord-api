@@ -88,14 +88,14 @@ This phase focuses on implementing consistent API response formats and comprehen
 
 **Phase 3: Authorization**
 
-- [ ] Define Permissions enum in `src/shared`.
-- [ ] Create `RolesGuard` to check memberships and permissions.
-- [ ] Add `@RequiredPermissions` decorator.
-- [ ] Apply guards to endpoints (e.g., channel create needs `MANAGE_CHANNELS`).
-- [ ] Inject user in services for perm checks (throw `ForbiddenException`).
-- [ ] Handle DM auth (based on participants).
-- [ ] Test with mock users/roles.
-- [ ] Add server roles management: Endpoints to assign/remove roles to members (e.g., `POST /servers/:id/members/:userId/roles/:roleId`, `DELETE` for removal), with permission checks.
+- [x] Define Permissions enum in `src/common/constants`.
+- [x] Create `RolesGuard` to check memberships and permissions.
+- [x] Add `@RequiredPermissions` decorator.
+- [x] Apply guards to endpoints (e.g., channel create needs `MANAGE_CHANNELS`).
+- [x] Inject user in services for perm checks (throw `ForbiddenException`).
+- [x] Handle DM auth (based on participants).
+- [x] Test with mock users/roles.
+- [x] Add server roles management: Endpoints to assign/remove roles to members (e.g., `POST /servers/:id/members/:userId/roles/:roleId`, `DELETE` for removal), with permission checks.
 
 **Phase 4: Video Calls**
 

@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
 import {
+  Permission,
+  PermissionsMap,
+} from '@/common/constants/permissions.enum';
+import {
   RoleNotFoundException,
   ServerNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
@@ -59,6 +63,22 @@ export class RolesService {
     return role;
   }
 
+  async getUserRole(userId: number, serverId: number) {
+    const membership = await this.prisma.membership.findUnique({
+      include: {
+        role: true,
+      },
+      where: {
+        userId_serverId: {
+          serverId,
+          userId,
+        },
+      },
+    });
+
+    return membership?.role || null;
+  }
+
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     try {
       return await this.prisma.role.update({
@@ -91,5 +111,91 @@ export class RolesService {
       }
       throw error;
     }
+  }
+
+  async removeRoleFromUser(userId: number, serverId: number) {
+    try {
+      return await this.prisma.membership.update({
+        include: {
+          role: true,
+          server: true,
+          user: true,
+        },
+        where: {
+          userId_serverId: {
+            serverId,
+            userId,
+          },
+        },
+        data: {
+          roleId: null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new RoleNotFoundException(userId);
+      }
+      throw error;
+    }
+  }
+
+  async assignRoleToUser(userId: number, serverId: number, roleId: number) {
+    try {
+      return await this.prisma.membership.update({
+        include: {
+          role: true,
+          server: true,
+          user: true,
+        },
+        where: {
+          userId_serverId: {
+            serverId,
+            userId,
+          },
+        },
+        data: {
+          roleId,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new RoleNotFoundException(roleId);
+      }
+      throw error;
+    }
+  }
+
+  async checkUserPermissions(
+    userId: number,
+    serverId: number,
+    requiredPermissions: Permission[],
+  ): Promise<boolean> {
+    const membership = await this.prisma.membership.findUnique({
+      include: {
+        role: true,
+      },
+      where: {
+        userId_serverId: {
+          serverId,
+          userId,
+        },
+      },
+    });
+
+    if (!membership || !membership.role) {
+      return false;
+    }
+
+    const userPermissions = membership.role.permissions as PermissionsMap;
+
+    return requiredPermissions.every(
+      (permission) => userPermissions[permission] === true,
+    );
   }
 }

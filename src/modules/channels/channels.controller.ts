@@ -9,6 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { Permission } from '@/common/constants/permissions.enum';
+import { RequiredPermissions } from '@/common/decorators/required-permissions.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { ChannelsService } from './channels.service';
@@ -19,11 +22,12 @@ import { FindOrCreateDMDto } from './dto/find-or-create-dm.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 
 @Controller('channels')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ChannelsController {
   constructor(private readonly channelsService: ChannelsService) {}
 
   @Post()
+  @RequiredPermissions(Permission.MANAGE_CHANNELS)
   create(@Body() createChannelDto: CreateChannelDto) {
     return this.channelsService.create(createChannelDto);
   }
@@ -34,6 +38,7 @@ export class ChannelsController {
   }
 
   @Get(':id')
+  @RequiredPermissions(Permission.VIEW_CHANNELS)
   findOne(@Param('id') id: string) {
     return this.channelsService.findOne(+id);
   }
@@ -53,11 +58,13 @@ export class ChannelsController {
   }
 
   @Patch(':id')
+  @RequiredPermissions(Permission.MANAGE_CHANNELS)
   update(@Param('id') id: string, @Body() updateChannelDto: UpdateChannelDto) {
     return this.channelsService.update(+id, updateChannelDto);
   }
 
   @Delete(':id')
+  @RequiredPermissions(Permission.MANAGE_CHANNELS)
   remove(@Param('id') id: string) {
     return this.channelsService.remove(+id);
   }

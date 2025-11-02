@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Message } from 'generated/prisma';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
 
@@ -139,8 +139,23 @@ export class MessagesService {
     return message;
   }
 
-  async update(id: number, updateMessageDto: UpdateMessageDto) {
+  async update(id: number, updateMessageDto: UpdateMessageDto, userId: number) {
     try {
+      // First, fetch the message to check ownership
+      const existingMessage = await this.prisma.message.findUnique({
+        select: { userId: true },
+        where: { id },
+      });
+
+      if (!existingMessage) {
+        throw new MessageNotFoundException(id);
+      }
+
+      // Check if the user owns the message
+      if (existingMessage.userId !== userId) {
+        throw new ForbiddenException('You can only edit your own messages');
+      }
+
       const message = await this.prisma.message.update({
         include: this.includeOptions,
         where: {
@@ -168,8 +183,23 @@ export class MessagesService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     try {
+      // First, fetch the message to check ownership
+      const existingMessage = await this.prisma.message.findUnique({
+        select: { userId: true },
+        where: { id },
+      });
+
+      if (!existingMessage) {
+        throw new MessageNotFoundException(id);
+      }
+
+      // Check if the user owns the message
+      if (existingMessage.userId !== userId) {
+        throw new ForbiddenException('You can only delete your own messages');
+      }
+
       const message = await this.prisma.message.update({
         include: this.includeOptions,
         where: {

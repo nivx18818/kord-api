@@ -15,6 +15,7 @@ import {
 } from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { RolesService } from '../roles/roles.service';
 import { CreateServerDto } from './dto/create-server.dto';
 import { UpdateServerDto } from './dto/update-server.dto';
 
@@ -31,7 +32,10 @@ export class ServersService {
     roles: true,
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rolesService: RolesService,
+  ) {}
 
   async create(createServerDto: CreateServerDto) {
     try {
@@ -203,6 +207,22 @@ export class ServersService {
       }
       throw error;
     }
+  }
+
+  async removeRole(serverId: number, userId: number) {
+    // Verify server exists
+    await this.findOne(serverId);
+
+    // Delegate to RolesService
+    return this.rolesService.removeRoleFromUser(userId, serverId);
+  }
+
+  async assignRole(serverId: number, userId: number, roleId: number) {
+    // Verify server exists
+    await this.findOne(serverId);
+
+    // Delegate to RolesService
+    return this.rolesService.assignRoleToUser(userId, serverId, roleId);
   }
 
   async redeemInvite(code: string, userId: number) {
