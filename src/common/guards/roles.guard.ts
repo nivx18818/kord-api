@@ -2,7 +2,6 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import {
-  ChannelNotFoundException,
   KordForbiddenException,
   MissingAuthenticationException,
   MissingPermissionsException,
@@ -34,7 +33,9 @@ export class RolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<{
       body?: { channelId?: string; serverId?: string };
+      method?: string;
       params?: { channelId?: string; id?: string; serverId?: string };
+      query?: { channelId?: string; serverId?: string };
       route?: { path?: string };
       url?: string;
       user: RequestUser;
@@ -48,10 +49,16 @@ export class RolesGuard implements CanActivate {
     // Extract parameters from request
     const params = request.params || {};
     const body = request.body || {};
+    const query = request.query || {};
 
     // Resolve serverId from various sources
     // This method may handle DM channels internally and return a special marker
-    const resolutionResult = await this.resolveServerId(request, params, body);
+    const resolutionResult = await this.resolveServerId(
+      request,
+      params,
+      body,
+      query,
+    );
 
     // If DM channel was already validated, allow access
     if (resolutionResult === 'DM_VALIDATED') {
@@ -59,6 +66,29 @@ export class RolesGuard implements CanActivate {
     }
 
     if (!resolutionResult) {
+      // If we can't resolve serverId, it might be:
+      // 1. A validation error (missing required field) - let validation pipes handle it
+      // 2. Resource doesn't exist - let controller/service throw 404
+      // 3. A permission error (can't determine context) - throw 403
+
+      const method = request.method || '';
+      const isMutationWithBody = ['PATCH', 'POST', 'PUT'].includes(method);
+      const isGetRequest = method === 'GET';
+
+      // For GET requests, if we can't resolve the server (likely resource doesn't exist),
+      // allow the request through so the service can throw proper NotFoundException
+      if (isGetRequest) {
+        return true;
+      }
+
+      // For POST/PATCH/PUT operations, if serverId is expected in body but missing,
+      // allow the request through so validation pipes can provide proper 400 error
+      if (isMutationWithBody && !body.serverId && !params.serverId) {
+        // Missing serverId in mutation - likely a validation error
+        // Allow through so DTO validation can handle it
+        return true;
+      }
+
       throw new KordForbiddenException(
         'Cannot determine server context for permission check',
       );
@@ -105,6 +135,18 @@ export class RolesGuard implements CanActivate {
     serverId: number,
     requiredPermissions: Permission[],
   ): Promise<boolean> {
+    // First check if the server exists to differentiate 404 from 403
+    const serverExists = await this.prisma.server.findUnique({
+      select: { id: true },
+      where: { id: serverId },
+    });
+
+    // If server doesn't exist, allow the request through
+    // The controller/service layer will throw proper NotFoundException
+    if (!serverExists) {
+      return true;
+    }
+
     // Get user's membership with role
     const membership = await this.prisma.membership.findUnique({
       include: {
@@ -152,13 +194,16 @@ export class RolesGuard implements CanActivate {
   private async resolveServerId(
     request: {
       body?: { channelId?: string; serverId?: string };
+      method?: string;
       params?: { channelId?: string; id?: string; serverId?: string };
+      query?: { channelId?: string; serverId?: string };
       route?: { path?: string };
       url?: string;
       user: RequestUser;
     },
     params: { channelId?: string; id?: string; serverId?: string },
     body: { channelId?: string; serverId?: string },
+    query: { channelId?: string; serverId?: string },
   ): Promise<null | string> {
     // Priority 1: Explicit serverId in params or body
     if (params.serverId) {
@@ -168,8 +213,9 @@ export class RolesGuard implements CanActivate {
       return body.serverId;
     }
 
-    // Priority 2: Resolve from channelId
-    const targetChannelId = params.channelId || body.channelId;
+    // Priority 2: Resolve from channelId (check params, body, and query)
+    const targetChannelId =
+      params.channelId || body.channelId || query.channelId;
     if (targetChannelId) {
       const channel = await this.prisma.channel.findUnique({
         select: { isDM: true, serverId: true },
@@ -177,7 +223,8 @@ export class RolesGuard implements CanActivate {
       });
 
       if (!channel) {
-        throw new ChannelNotFoundException(parseInt(targetChannelId, 10));
+        // Don't throw here - let the controller handle not found
+        return null;
       }
 
       // For DM channels, check participant membership instead of server roles
@@ -235,7 +282,8 @@ export class RolesGuard implements CanActivate {
         });
 
         if (!channel) {
-          throw new ChannelNotFoundException(parseInt(params.id, 10));
+          // Don't throw - let the controller handle not found
+          return null;
         }
 
         if (channel.isDM) {
@@ -267,13 +315,16 @@ export class RolesGuard implements CanActivate {
           where: { id: parseInt(params.id, 10) },
         });
 
-        if (message?.channel) {
-          if (message.channel.isDM) {
-            await this.checkDMParticipation(request.user.id, message.channelId);
-            return 'DM_VALIDATED';
-          }
-          return message.channel.serverId.toString();
+        if (!message?.channel) {
+          // Don't throw - let the controller handle not found
+          return null;
         }
+
+        if (message.channel.isDM) {
+          await this.checkDMParticipation(request.user.id, message.channelId);
+          return 'DM_VALIDATED';
+        }
+        return message.channel.serverId.toString();
       }
 
       // Pattern 5: Role operations - resolve through role entity
@@ -287,9 +338,12 @@ export class RolesGuard implements CanActivate {
           where: { id: parseInt(params.id, 10) },
         });
 
-        if (role) {
-          return role.serverId.toString();
+        if (!role) {
+          // Don't throw - let the controller handle not found
+          return null;
         }
+
+        return role.serverId.toString();
       }
     }
 
