@@ -97,6 +97,10 @@ This phase focuses on implementing consistent API response formats and comprehen
 - [x] Test with mock users/roles.
 - [x] Add server roles management: Endpoints to assign/remove roles to members (e.g., `POST /servers/:id/members/:userId/roles/:roleId`, `DELETE` for removal), with permission checks.
 
+**Phase 3.5: Flow Fixing and Enhancements**
+
+Refer to the detailed plan in `docs/plan/flow-fixing.md` for comprehensive steps.
+
 **Phase 4: Video Calls**
 
 - [ ] Install WebSocket/mediasoup dependencies.
