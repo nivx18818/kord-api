@@ -56,19 +56,49 @@ describe('ServersService', () => {
   });
 
   describe('create', () => {
-    it('should create a server', async () => {
+    it('should create a server with admin role and membership', async () => {
       const createServerDto: CreateServerDto = {
         name: 'Test Server',
         servername: 'testserver',
       };
+      const creatorId = 1;
 
       const serverWithRelations = createMockServerWithRelations();
-      prisma.server.create.mockResolvedValue(serverWithRelations);
+      const mockAdminRole = {
+        id: 1,
+        name: 'Admin',
+        permissions: {},
+        serverId: mockServer.id,
+      };
+      const mockMembership = {
+        roleId: 1,
+        serverId: mockServer.id,
+        userId: creatorId,
+      };
 
-      const result = await service.create(createServerDto);
+      // Mock transaction callback
+      // eslint-disable-next-line @typescript-eslint/require-await
+      prisma.$transaction.mockImplementation(async (callback: any) => {
+        const mockTx = {
+          membership: {
+            create: jest.fn().mockResolvedValue(mockMembership),
+          },
+          role: {
+            create: jest.fn().mockResolvedValue(mockAdminRole),
+          },
+          server: {
+            create: jest.fn().mockResolvedValue(mockServer),
+            findUnique: jest.fn().mockResolvedValue(serverWithRelations),
+          },
+        };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
+        return callback(mockTx);
+      });
+
+      const result = await service.create(createServerDto, creatorId);
 
       expect(result).toEqual(serverWithRelations);
-      expect(prisma.server.create.mock.calls.length).toBeGreaterThan(0);
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should throw ConflictException when servername already exists', async () => {
@@ -76,6 +106,7 @@ describe('ServersService', () => {
         name: 'Test Server',
         servername: 'testserver',
       };
+      const creatorId = 1;
 
       const prismaError = new PrismaClientKnownRequestError(
         'Unique constraint failed',
@@ -86,12 +117,12 @@ describe('ServersService', () => {
         },
       );
 
-      prisma.server.create.mockRejectedValue(prismaError);
+      prisma.$transaction.mockRejectedValue(prismaError);
 
-      await expect(service.create(createServerDto)).rejects.toThrow(
+      await expect(service.create(createServerDto, creatorId)).rejects.toThrow(
         ConflictException,
       );
-      await expect(service.create(createServerDto)).rejects.toThrow(
+      await expect(service.create(createServerDto, creatorId)).rejects.toThrow(
         'Servername already taken',
       );
     });

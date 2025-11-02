@@ -68,13 +68,19 @@ describe('ServersController', () => {
         servername: 'testserver',
       };
 
+      const mockUser = {
+        email: 'test@example.com',
+        id: 1,
+        username: 'testuser',
+      };
+
       const server = createMockServerWithRelations();
       mockServersService.create.mockResolvedValue(server);
 
-      const result = await controller.create(createServerDto);
+      const result = await controller.create(createServerDto, mockUser);
 
       expect(result).toEqual(server);
-      expect(service.create).toHaveBeenCalledWith(createServerDto);
+      expect(service.create).toHaveBeenCalledWith(createServerDto, mockUser.id);
     });
   });
 

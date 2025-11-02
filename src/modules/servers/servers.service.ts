@@ -37,11 +37,54 @@ export class ServersService {
     private readonly rolesService: RolesService,
   ) {}
 
-  async create(createServerDto: CreateServerDto) {
+  async create(createServerDto: CreateServerDto, creatorId: number) {
     try {
-      return await this.prisma.server.create({
-        include: this.includeOptions,
-        data: createServerDto,
+      return await this.prisma.$transaction(async (tx) => {
+        // 1. Create the server
+        const server = await tx.server.create({
+          data: createServerDto,
+        });
+
+        // 2. Create default "Admin" role with all permissions
+        const adminRole = await tx.role.create({
+          data: {
+            name: 'Admin',
+            permissions: JSON.stringify({
+              addReactions: true,
+              banMembers: true,
+              connectVoice: true,
+              deafenMembers: true,
+              deleteMessages: true,
+              editMessages: true,
+              kickMembers: true,
+              manageChannels: true,
+              manageInvites: true,
+              manageReactions: true,
+              manageRoles: true,
+              manageServers: true,
+              muteMembers: true,
+              sendMessages: true,
+              speakVoice: true,
+              viewChannels: true,
+            }),
+            serverId: server.id,
+          },
+        });
+
+        // 3. Add creator as admin member
+        await tx.membership.create({
+          data: {
+            roleId: adminRole.id,
+            serverId: server.id,
+            userId: creatorId,
+          },
+        });
+
+        // 4. Return server with full relations
+        return await tx.server.findUnique({
+          include: this.includeOptions,
+          where: { id: server.id },
+        });
       });
     } catch (error) {
       if (

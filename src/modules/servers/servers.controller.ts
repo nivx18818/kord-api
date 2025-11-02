@@ -14,6 +14,10 @@ import { Permission } from '@/common/constants/permissions.enum';
 import { RequiredPermissions } from '@/common/decorators/required-permissions.decorator';
 import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
 import { RolesGuard } from '@/common/guards/roles.guard';
+import {
+  CurrentUser,
+  type RequestUser,
+} from '@/modules/auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateInviteDto } from './dto/create-invite.dto';
@@ -28,9 +32,11 @@ export class ServersController {
   constructor(private readonly serversService: ServersService) {}
 
   @Post()
-  @RequiredPermissions(Permission.MANAGE_SERVERS)
-  create(@Body() createServerDto: CreateServerDto) {
-    return this.serversService.create(createServerDto);
+  create(
+    @Body() createServerDto: CreateServerDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.serversService.create(createServerDto, user.id);
   }
 
   @Post(':id/invites')
