@@ -40,6 +40,9 @@ describe('RolesGuard', () => {
             role: {
               findUnique: jest.fn(),
             },
+            server: {
+              findUnique: jest.fn(),
+            },
           },
         },
       ],
@@ -89,6 +92,10 @@ describe('RolesGuard', () => {
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_SERVERS]);
 
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 1,
+      } as never);
+
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
         createdAt: new Date(),
         role: {
@@ -120,6 +127,10 @@ describe('RolesGuard', () => {
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_SERVERS]);
 
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 1,
+      } as never);
+
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
         createdAt: new Date(),
         role: {
@@ -150,6 +161,10 @@ describe('RolesGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_SERVERS]);
+
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 1,
+      } as never);
 
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue(null);
 
@@ -202,6 +217,10 @@ describe('RolesGuard', () => {
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.VIEW_CHANNELS]);
 
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 1,
+      } as never);
+
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
         createdAt: new Date(),
         role: {
@@ -237,6 +256,10 @@ describe('RolesGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_INVITES]);
+
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 1,
+      } as never);
 
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
         createdAt: new Date(),
@@ -280,6 +303,10 @@ describe('RolesGuard', () => {
         type: 'TEXT',
         updatedAt: new Date(),
       });
+
+      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
+        id: 5,
+      } as never);
 
       jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
         createdAt: new Date(),
