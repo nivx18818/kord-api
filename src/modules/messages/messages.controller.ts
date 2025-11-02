@@ -64,7 +64,8 @@ export class MessagesController {
   }
 
   @Delete(':id')
-  @RequiredPermissions(Permission.DELETE_MESSAGES)
+  // Users can delete their own messages
+  // Service layer enforces ownership check
   remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.messagesService.remove(+id, user.id);
   }
