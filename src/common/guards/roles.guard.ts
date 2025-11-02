@@ -128,7 +128,11 @@ export class RolesGuard implements CanActivate {
     }
 
     // Parse permissions from role JSON
-    const userPermissions = membership.role.permissions as PermissionsMap;
+    const permissionsRaw = membership.role.permissions;
+    const userPermissions: PermissionsMap =
+      typeof permissionsRaw === 'string'
+        ? (JSON.parse(permissionsRaw) as PermissionsMap)
+        : (permissionsRaw as PermissionsMap);
 
     // Check if user has all required permissions
     const hasAllPermissions = requiredPermissions.every(
@@ -221,6 +225,10 @@ export class RolesGuard implements CanActivate {
         routePath.startsWith('/channels/:id') ||
         url.match(/^\/channels\/\d+/)
       ) {
+        if (!params.id) {
+          return null;
+        }
+
         const channel = await this.prisma.channel.findUnique({
           select: { isDM: true, serverId: true },
           where: { id: parseInt(params.id, 10) },
@@ -246,6 +254,10 @@ export class RolesGuard implements CanActivate {
         routePath.startsWith('/messages/:id') ||
         url.match(/^\/messages\/\d+/)
       ) {
+        if (!params.id) {
+          return null;
+        }
+
         const message = await this.prisma.message.findUnique({
           include: {
             channel: {
@@ -266,6 +278,10 @@ export class RolesGuard implements CanActivate {
 
       // Pattern 5: Role operations - resolve through role entity
       if (routePath.startsWith('/roles/:id') || url.match(/^\/roles\/\d+/)) {
+        if (!params.id) {
+          return null;
+        }
+
         const role = await this.prisma.role.findUnique({
           select: { serverId: true },
           where: { id: parseInt(params.id, 10) },

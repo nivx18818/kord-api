@@ -19,9 +19,14 @@ describe('ServersController', () => {
 
   const mockServersService = {
     create: jest.fn(),
+    createInvite: jest.fn(),
     findAll: jest.fn(),
+    findByUserId: jest.fn(),
     findOne: jest.fn(),
+    getServerInvites: jest.fn(),
+    redeemInvite: jest.fn(),
     remove: jest.fn(),
+    removeInvite: jest.fn(),
     update: jest.fn(),
   };
 
@@ -87,13 +92,22 @@ describe('ServersController', () => {
   describe('findAll', () => {
     it('should return an array of servers', async () => {
       const servers = [createMockServerWithRelations()];
-      const pagination = { limit: 10, offset: 0 };
       mockServersService.findAll.mockResolvedValue(servers);
 
-      const result = await controller.findAll(pagination);
+      const result = await controller.findAll(undefined, '10', '1');
 
       expect(result).toEqual(servers);
-      expect(service.findAll).toHaveBeenCalledWith(pagination);
+      expect(service.findAll).toHaveBeenCalledWith({ limit: 10, page: 1 });
+    });
+
+    it('should return servers by userId when provided', async () => {
+      const servers = [createMockServerWithRelations()];
+      mockServersService.findByUserId.mockResolvedValue(servers);
+
+      const result = await controller.findAll('1', undefined, undefined);
+
+      expect(result).toEqual(servers);
+      expect(service.findByUserId).toHaveBeenCalledWith(1);
     });
   });
 

@@ -54,12 +54,17 @@ export class ServersController {
 
   @Get()
   findAll(
-    @Query() pagination: OffsetPaginationDto,
     @Query('userId') userId?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
     if (userId) {
       return this.serversService.findByUserId(+userId);
     }
+    const pagination: OffsetPaginationDto = {
+      limit: limit ? parseInt(limit, 10) : 10,
+      page: page ? parseInt(page, 10) : 1,
+    };
     return this.serversService.findAll(pagination);
   }
 
