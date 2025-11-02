@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -105,6 +107,7 @@ export class ServersController {
   }
 
   @Post(':id/members/:userId/roles/:roleId')
+  @HttpCode(HttpStatus.OK)
   @RequiredPermissions(Permission.MANAGE_ROLES)
   assignRole(
     @Param('id') serverId: string,
