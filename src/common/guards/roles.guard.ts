@@ -45,47 +45,20 @@ export class RolesGuard implements CanActivate {
       throw new MissingAuthenticationException();
     }
 
-    // Extract serverId or channelId from request params or body
-    const { channelId, id, serverId } = request.params || {};
-    const bodyServerId = request.body?.serverId;
-    const bodyChannelId = request.body?.channelId;
+    // Extract parameters from request
+    const params = request.params || {};
+    const body = request.body || {};
 
-    const targetServerId = serverId || bodyServerId;
-    const targetChannelId = channelId || bodyChannelId;
+    // Resolve serverId from various sources
+    // This method may handle DM channels internally and return a special marker
+    const resolutionResult = await this.resolveServerId(request, params, body);
 
-    // If channelId is provided, resolve serverId from channel
-    let resolvedServerId = targetServerId;
-    if (targetChannelId && !resolvedServerId) {
-      const channel = await this.prisma.channel.findUnique({
-        select: { isDM: true, serverId: true },
-        where: { id: parseInt(targetChannelId, 10) },
-      });
-
-      if (!channel) {
-        throw new ChannelNotFoundException(parseInt(targetChannelId, 10));
-      }
-
-      // For DM channels, check participant membership instead of server roles
-      if (channel.isDM) {
-        return this.checkDMParticipation(
-          user.id,
-          parseInt(targetChannelId, 10),
-        );
-      }
-
-      resolvedServerId = channel.serverId.toString();
+    // If DM channel was already validated, allow access
+    if (resolutionResult === 'DM_VALIDATED') {
+      return true;
     }
 
-    // If operating on a server resource directly
-    if (!resolvedServerId && id) {
-      // Check if the id param is a server being accessed
-      const urlPath = request.route?.path || request.url || '';
-      if (urlPath.includes('/servers/')) {
-        resolvedServerId = id;
-      }
-    }
-
-    if (!resolvedServerId) {
+    if (!resolutionResult) {
       throw new KordForbiddenException(
         'Cannot determine server context for permission check',
       );
@@ -94,7 +67,7 @@ export class RolesGuard implements CanActivate {
     // Check user membership and permissions in the server
     return this.checkServerPermissions(
       user.id,
-      parseInt(resolvedServerId, 10),
+      parseInt(resolutionResult, 10),
       requiredPermissions,
     );
   }
@@ -167,5 +140,149 @@ export class RolesGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  /**
+   * Resolves serverId from request parameters, body, or related entities
+   */
+  private async resolveServerId(
+    request: {
+      body?: { channelId?: string; serverId?: string };
+      params?: { channelId?: string; id?: string; serverId?: string };
+      route?: { path?: string };
+      url?: string;
+      user: RequestUser;
+    },
+    params: { channelId?: string; id?: string; serverId?: string },
+    body: { channelId?: string; serverId?: string },
+  ): Promise<null | string> {
+    // Priority 1: Explicit serverId in params or body
+    if (params.serverId) {
+      return params.serverId;
+    }
+    if (body.serverId) {
+      return body.serverId;
+    }
+
+    // Priority 2: Resolve from channelId
+    const targetChannelId = params.channelId || body.channelId;
+    if (targetChannelId) {
+      const channel = await this.prisma.channel.findUnique({
+        select: { isDM: true, serverId: true },
+        where: { id: parseInt(targetChannelId, 10) },
+      });
+
+      if (!channel) {
+        throw new ChannelNotFoundException(parseInt(targetChannelId, 10));
+      }
+
+      // For DM channels, check participant membership instead of server roles
+      if (channel.isDM) {
+        await this.checkDMParticipation(
+          request.user.id,
+          parseInt(targetChannelId, 10),
+        );
+        return 'DM_VALIDATED'; // DM channels don't need server permission checks
+      }
+
+      return channel.serverId.toString();
+    }
+
+    // Priority 3: Infer serverId from route pattern and :id param
+    if (params.id) {
+      const routePath = request.route?.path || '';
+      const url = request.url || '';
+
+      // Pattern 1: Direct server routes (/servers/:id, /servers/:id/invites, etc.)
+      if (
+        routePath.startsWith('/servers/:id') ||
+        url.match(/^\/servers\/\d+/)
+      ) {
+        return params.id;
+      }
+
+      // Pattern 2: Server member/role routes (/servers/:serverId/members/:userId/roles)
+      // These should use params.serverId, but check if :id is in a server context
+      if (routePath.includes('/servers/')) {
+        // Extract serverId from route path structure
+        const pathParts = routePath.split('/');
+        const serverIndex = pathParts.indexOf('servers');
+        if (
+          serverIndex !== -1 &&
+          pathParts[serverIndex + 1] === ':id' &&
+          !routePath.includes('/members/:id')
+        ) {
+          return params.id;
+        }
+      }
+
+      // Pattern 3: Channel operations - resolve through channel entity
+      if (
+        routePath.startsWith('/channels/:id') ||
+        url.match(/^\/channels\/\d+/)
+      ) {
+        const channel = await this.prisma.channel.findUnique({
+          select: { isDM: true, serverId: true },
+          where: { id: parseInt(params.id, 10) },
+        });
+
+        if (!channel) {
+          throw new ChannelNotFoundException(parseInt(params.id, 10));
+        }
+
+        if (channel.isDM) {
+          await this.checkDMParticipation(
+            request.user.id,
+            parseInt(params.id, 10),
+          );
+          return 'DM_VALIDATED';
+        }
+
+        return channel.serverId.toString();
+      }
+
+      // Pattern 4: Message operations - resolve through message -> channel -> server
+      if (
+        routePath.startsWith('/messages/:id') ||
+        url.match(/^\/messages\/\d+/)
+      ) {
+        const message = await this.prisma.message.findUnique({
+          include: {
+            channel: {
+              select: { isDM: true, serverId: true },
+            },
+          },
+          where: { id: parseInt(params.id, 10) },
+        });
+
+        if (message?.channel) {
+          if (message.channel.isDM) {
+            await this.checkDMParticipation(request.user.id, message.channelId);
+            return 'DM_VALIDATED';
+          }
+          return message.channel.serverId.toString();
+        }
+      }
+
+      // Pattern 5: Role operations - resolve through role entity
+      if (routePath.startsWith('/roles/:id') || url.match(/^\/roles\/\d+/)) {
+        const role = await this.prisma.role.findUnique({
+          select: { serverId: true },
+          where: { id: parseInt(params.id, 10) },
+        });
+
+        if (role) {
+          return role.serverId.toString();
+        }
+      }
+    }
+
+    // Priority 4: Resolve from other specific params
+    // Handle nested routes like /servers/:serverId/channels/:channelId
+    if (params.serverId) {
+      return params.serverId;
+    }
+
+    return null;
   }
 }

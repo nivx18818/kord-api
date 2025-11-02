@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -31,6 +32,12 @@ describe('RolesGuard', () => {
               findUnique: jest.fn(),
             },
             membership: {
+              findUnique: jest.fn(),
+            },
+            message: {
+              findUnique: jest.fn(),
+            },
+            role: {
               findUnique: jest.fn(),
             },
           },
@@ -182,6 +189,140 @@ describe('RolesGuard', () => {
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
+    });
+
+    it('should resolve serverId from /servers/:id route pattern', async () => {
+      const mockContext = createMockExecutionContext({
+        params: { id: '1' },
+        route: { path: '/servers/:id' },
+        user: { email: 'test@test.com', id: 1, username: 'testuser' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([Permission.VIEW_CHANNELS]);
+
+      jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
+        createdAt: new Date(),
+        role: {
+          id: 1,
+          name: 'Member',
+          permissions: {
+            viewChannels: true,
+          },
+          serverId: 1,
+        },
+        roleId: 1,
+        serverId: 1,
+        updatedAt: new Date(),
+        userId: 1,
+      } as never);
+
+      const result = await guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+      expect(prisma.membership.findUnique).toHaveBeenCalledWith({
+        include: { role: true },
+        where: { userId_serverId: { serverId: 1, userId: 1 } },
+      });
+    });
+
+    it('should resolve serverId from /servers/:id/invites route pattern', async () => {
+      const mockContext = createMockExecutionContext({
+        params: { id: '1' },
+        route: { path: '/servers/:id/invites' },
+        user: { email: 'test@test.com', id: 1, username: 'testuser' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([Permission.MANAGE_INVITES]);
+
+      jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
+        createdAt: new Date(),
+        role: {
+          id: 1,
+          name: 'Admin',
+          permissions: {
+            manageInvites: true,
+          },
+          serverId: 1,
+        },
+        roleId: 1,
+        serverId: 1,
+        updatedAt: new Date(),
+        userId: 1,
+      } as never);
+
+      const result = await guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+    });
+
+    it('should resolve serverId from channel when accessing /channels/:id', async () => {
+      const mockContext = createMockExecutionContext({
+        params: { id: '1' },
+        route: { path: '/channels/:id' },
+        user: { email: 'test@test.com', id: 1, username: 'testuser' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([Permission.VIEW_CHANNELS]);
+
+      jest.spyOn(prisma.channel, 'findUnique').mockResolvedValue({
+        createdAt: new Date(),
+        id: 1,
+        isDM: false,
+        name: 'general',
+        serverId: 5,
+        status: 'PUBLIC',
+        type: 'TEXT',
+        updatedAt: new Date(),
+      });
+
+      jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
+        createdAt: new Date(),
+        role: {
+          id: 1,
+          name: 'Member',
+          permissions: {
+            viewChannels: true,
+          },
+          serverId: 5,
+        },
+        roleId: 1,
+        serverId: 5,
+        updatedAt: new Date(),
+        userId: 1,
+      } as never);
+
+      const result = await guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+      expect(prisma.channel.findUnique).toHaveBeenCalledWith({
+        select: { isDM: true, serverId: true },
+        where: { id: 1 },
+      });
+      expect(prisma.membership.findUnique).toHaveBeenCalledWith({
+        include: { role: true },
+        where: { userId_serverId: { serverId: 5, userId: 1 } },
+      });
+    });
+
+    it('should throw ForbiddenException when cannot determine server context', async () => {
+      const mockContext = createMockExecutionContext({
+        params: { unknownParam: '1' },
+        user: { email: 'test@test.com', id: 1, username: 'testuser' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([Permission.MANAGE_SERVERS]);
+
+      await expect(guard.canActivate(mockContext)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });
