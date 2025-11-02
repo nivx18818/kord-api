@@ -9,6 +9,7 @@ import {
 } from 'test/utils';
 
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RolesService } from '@/modules/roles/roles.service';
 import { CreateServerDto } from '@/modules/servers/dto/create-server.dto';
 import { UpdateServerDto } from '@/modules/servers/dto/update-server.dto';
 import { ServersService } from '@/modules/servers/servers.service';
@@ -16,6 +17,15 @@ import { ServersService } from '@/modules/servers/servers.service';
 describe('ServersService', () => {
   let service: ServersService;
   let prisma: ReturnType<typeof createMockPrismaService>;
+
+  const mockRolesService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findByServerAndUser: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
+    update: jest.fn(),
+  };
 
   beforeEach(async () => {
     prisma = createMockPrismaService();
@@ -27,10 +37,18 @@ describe('ServersService', () => {
           provide: PrismaService,
           useValue: prisma,
         },
+        {
+          provide: RolesService,
+          useValue: mockRolesService,
+        },
       ],
     }).compile();
 
     service = module.get<ServersService>(ServersService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {

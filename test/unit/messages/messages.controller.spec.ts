@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { createMockMessageWithRelations, mockMessage } from 'test/utils';
+import {
+  createMockMessageWithRelations,
+  createMockPrismaService,
+  mockMessage,
+} from 'test/utils';
 
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { RequestUser } from '@/modules/auth/decorators/current-user.decorator';
 import { CreateMessageDto } from '@/modules/messages/dto/create-message.dto';
 import { UpdateMessageDto } from '@/modules/messages/dto/update-message.dto';
 import { MessagesController } from '@/modules/messages/messages.controller';
 import { MessagesService } from '@/modules/messages/messages.service';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
@@ -19,7 +26,13 @@ describe('MessagesController', () => {
     update: jest.fn(),
   };
 
+  const mockRolesGuard = {
+    canActivate: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
+    const prisma = createMockPrismaService();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MessagesController],
       providers: [
@@ -27,8 +40,15 @@ describe('MessagesController', () => {
           provide: MessagesService,
           useValue: mockMessagesService,
         },
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(RolesGuard)
+      .useValue(mockRolesGuard)
+      .compile();
 
     controller = module.get<MessagesController>(MessagesController);
     service = module.get<MessagesService>(MessagesService);
@@ -90,28 +110,32 @@ describe('MessagesController', () => {
         content: { text: 'Updated message' },
       };
 
+      const mockUser = { id: 1, username: 'testuser' } as RequestUser;
+
       const updatedMessage = {
         ...mockMessage,
         content: { text: 'Updated message' },
       };
       mockMessagesService.update.mockResolvedValue(updatedMessage);
 
-      const result = await controller.update('1', updateMessageDto);
+      const result = await controller.update('1', updateMessageDto, mockUser);
 
       expect(result).toEqual(updatedMessage);
-      expect(service.update).toHaveBeenCalledWith(1, updateMessageDto);
+      expect(service.update).toHaveBeenCalledWith(1, updateMessageDto, 1);
     });
   });
 
   describe('remove', () => {
     it('should soft delete a message', async () => {
+      const mockUser = { id: 1, username: 'testuser' } as RequestUser;
+
       const deletedMessage = { ...mockMessage, deletedAt: new Date() };
       mockMessagesService.remove.mockResolvedValue(deletedMessage);
 
-      const result = await controller.remove('1');
+      const result = await controller.remove('1', mockUser);
 
       expect(result).toEqual(deletedMessage);
-      expect(service.remove).toHaveBeenCalledWith(1);
+      expect(service.remove).toHaveBeenCalledWith(1, 1);
     });
   });
 });

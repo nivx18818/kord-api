@@ -146,16 +146,28 @@ describe('MessagesService', () => {
         content: { text: 'Updated message' },
       };
 
+      const existingMessage = {
+        userId: 1,
+      };
+
       const updatedMessage = {
         ...createMockMessageWithRelations(),
         content: { text: 'Updated message' },
       };
+
+      /* eslint-disable @typescript-eslint/no-unsafe-argument */
+      prisma.message.findUnique.mockResolvedValue(existingMessage as any);
+      /* eslint-enable @typescript-eslint/no-unsafe-argument */
       prisma.message.update.mockResolvedValue(updatedMessage);
 
-      const result = await service.update(1, updateMessageDto);
+      const result = await service.update(1, updateMessageDto, 1);
 
       expect(result.content).toEqual({ text: 'Updated message' });
-      expect(prisma.message.update.mock.calls.length).toBeGreaterThan(0);
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({
+        select: { userId: true },
+        where: { id: 1 },
+      });
+      expect(prisma.message.update).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when message not found', async () => {
@@ -163,17 +175,9 @@ describe('MessagesService', () => {
         content: { text: 'Updated message' },
       };
 
-      const prismaError = new PrismaClientKnownRequestError(
-        'Record not found',
-        {
-          clientVersion: '5.0.0',
-          code: 'P2025',
-        },
-      );
+      prisma.message.findUnique.mockResolvedValue(null);
 
-      prisma.message.update.mockRejectedValue(prismaError);
-
-      await expect(service.update(999, updateMessageDto)).rejects.toThrow(
+      await expect(service.update(999, updateMessageDto, 1)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -181,15 +185,27 @@ describe('MessagesService', () => {
 
   describe('remove', () => {
     it('should soft delete a message', async () => {
+      const existingMessage = {
+        userId: 1,
+      };
+
       const softDeletedMessage = {
         ...mockMessage,
         deletedAt: new Date(),
       };
+
+      /* eslint-disable @typescript-eslint/no-unsafe-argument */
+      prisma.message.findUnique.mockResolvedValue(existingMessage as any);
+      /* eslint-enable @typescript-eslint/no-unsafe-argument */
       prisma.message.update.mockResolvedValue(softDeletedMessage);
 
-      const result = await service.remove(1);
+      const result = await service.remove(1, 1);
 
       expect(result.deletedAt).toBeDefined();
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({
+        select: { userId: true },
+        where: { id: 1 },
+      });
       expect(prisma.message.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: {
@@ -204,17 +220,9 @@ describe('MessagesService', () => {
     });
 
     it('should throw NotFoundException when message not found', async () => {
-      const prismaError = new PrismaClientKnownRequestError(
-        'Record not found',
-        {
-          clientVersion: '5.0.0',
-          code: 'P2025',
-        },
-      );
+      prisma.message.findUnique.mockResolvedValue(null);
 
-      prisma.message.update.mockRejectedValue(prismaError);
-
-      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(999, 1)).rejects.toThrow(NotFoundException);
     });
   });
 });

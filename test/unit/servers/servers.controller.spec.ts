@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { createMockServerWithRelations, mockServer } from 'test/utils';
+import {
+  createMockPrismaService,
+  createMockServerWithRelations,
+  mockServer,
+} from 'test/utils';
 
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 import { CreateServerDto } from '@/modules/servers/dto/create-server.dto';
 import { UpdateServerDto } from '@/modules/servers/dto/update-server.dto';
 import { ServersController } from '@/modules/servers/servers.controller';
@@ -19,7 +25,13 @@ describe('ServersController', () => {
     update: jest.fn(),
   };
 
+  const mockRolesGuard = {
+    canActivate: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
+    const prisma = createMockPrismaService();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ServersController],
       providers: [
@@ -27,8 +39,15 @@ describe('ServersController', () => {
           provide: ServersService,
           useValue: mockServersService,
         },
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(RolesGuard)
+      .useValue(mockRolesGuard)
+      .compile();
 
     controller = module.get<ServersController>(ServersController);
     service = module.get<ServersService>(ServersService);
@@ -62,12 +81,13 @@ describe('ServersController', () => {
   describe('findAll', () => {
     it('should return an array of servers', async () => {
       const servers = [createMockServerWithRelations()];
+      const pagination = { limit: 10, offset: 0 };
       mockServersService.findAll.mockResolvedValue(servers);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(pagination);
 
       expect(result).toEqual(servers);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(pagination);
     });
   });
 

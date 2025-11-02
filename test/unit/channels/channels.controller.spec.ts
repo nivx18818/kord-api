@@ -1,11 +1,17 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
-import { createMockChannelWithRelations, mockChannel } from 'test/utils';
+import {
+  createMockChannelWithRelations,
+  createMockPrismaService,
+  mockChannel,
+} from 'test/utils';
 
+import { RolesGuard } from '@/common/guards/roles.guard';
 import { ChannelsController } from '@/modules/channels/channels.controller';
 import { ChannelsService } from '@/modules/channels/channels.service';
 import { CreateChannelDto } from '@/modules/channels/dto/create-channel.dto';
 import { UpdateChannelDto } from '@/modules/channels/dto/update-channel.dto';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 
 describe('ChannelsController', () => {
   let controller: ChannelsController;
@@ -19,7 +25,13 @@ describe('ChannelsController', () => {
     update: jest.fn(),
   };
 
+  const mockRolesGuard = {
+    canActivate: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
+    const prisma = createMockPrismaService();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ChannelsController],
       providers: [
@@ -27,8 +39,15 @@ describe('ChannelsController', () => {
           provide: ChannelsService,
           useValue: mockChannelsService,
         },
+        {
+          provide: PrismaService,
+          useValue: prisma,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(RolesGuard)
+      .useValue(mockRolesGuard)
+      .compile();
 
     controller = module.get<ChannelsController>(ChannelsController);
     service = module.get<ChannelsService>(ChannelsService);
