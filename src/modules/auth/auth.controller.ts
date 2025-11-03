@@ -1,3 +1,5 @@
+import type { Request, Response } from 'express';
+
 import {
   Body,
   Controller,
@@ -6,16 +8,24 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+
+import {
+  COOKIE_NAMES,
+  getAccessTokenCookieOptions,
+  getClearCookieOptions,
+  getRefreshTokenCookieOptions,
+} from '@/common/constants/cookie-config';
+import { RefreshTokenInvalidException } from '@/common/exceptions/kord.exceptions';
 
 import type { RequestUser } from './decorators/current-user.decorator';
 
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -40,21 +50,105 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    const { accessToken, refreshToken } =
+      await this.authService.login(loginDto);
+
+    // Set cookies
+    response.cookie(
+      COOKIE_NAMES.ACCESS_TOKEN,
+      accessToken,
+      getAccessTokenCookieOptions(),
+    );
+    response.cookie(
+      COOKIE_NAMES.REFRESH_TOKEN,
+      refreshToken,
+      getRefreshTokenCookieOptions(),
+    );
+
+    return { message: 'Login successful' };
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @CurrentUser() user: RequestUser,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    const refreshToken = request.cookies[COOKIE_NAMES.REFRESH_TOKEN] as string;
+
+    // Invalidate refresh token in database if present
+    if (refreshToken) {
+      await this.authService.logout(user.id, refreshToken);
+    }
+
+    // Clear cookies
+    response.clearCookie(COOKIE_NAMES.ACCESS_TOKEN, getClearCookieOptions());
+    response.clearCookie(COOKIE_NAMES.REFRESH_TOKEN, {
+      ...getClearCookieOptions(),
+      path: '/api/v1/auth/refresh', // Must match original path
+    });
+
+    return { message: 'Logout successful' };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
-    @Body() refreshTokenDto: RefreshTokenDto,
-  ): Promise<AuthResponseDto> {
-    return this.authService.refresh(refreshTokenDto.refreshToken);
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    // Extract refresh token from cookie
+    const refreshToken = request.cookies[COOKIE_NAMES.REFRESH_TOKEN] as string;
+
+    if (!refreshToken) {
+      throw new RefreshTokenInvalidException();
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.authService.refresh(refreshToken);
+
+    // Set new cookies
+    response.cookie(
+      COOKIE_NAMES.ACCESS_TOKEN,
+      accessToken,
+      getAccessTokenCookieOptions(),
+    );
+    response.cookie(
+      COOKIE_NAMES.REFRESH_TOKEN,
+      newRefreshToken,
+      getRefreshTokenCookieOptions(),
+    );
+
+    return { message: 'Token refreshed' };
   }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
+    const { accessToken, refreshToken } =
+      await this.authService.register(registerDto);
+
+    // Set cookies
+    response.cookie(
+      COOKIE_NAMES.ACCESS_TOKEN,
+      accessToken,
+      getAccessTokenCookieOptions(),
+    );
+    response.cookie(
+      COOKIE_NAMES.REFRESH_TOKEN,
+      refreshToken,
+      getRefreshTokenCookieOptions(),
+    );
+
+    return { message: 'Registration successful' };
   }
 }

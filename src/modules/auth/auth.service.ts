@@ -76,6 +76,31 @@ export class AuthService {
     return this.generateTokens(user.id, user.email, user.username);
   }
 
+  async logout(userId: number, refreshToken: string): Promise<void> {
+    try {
+      // Delete the specific refresh token
+      await this.prisma.refreshToken.deleteMany({
+        where: {
+          token: refreshToken,
+          userId,
+        },
+      });
+
+      // Optional: Clean up expired tokens for this user
+      await this.prisma.refreshToken.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date(),
+          },
+          userId,
+        },
+      });
+    } catch (error) {
+      // Log error but don't throw - logout should succeed even if cleanup fails
+      console.error('Error during logout token cleanup:', error);
+    }
+  }
+
   async refresh(refreshToken: string): Promise<AuthResponseDto> {
     try {
       const payload = this.jwtService.verify<{
