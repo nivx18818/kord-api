@@ -1,4 +1,4 @@
-# Kord API Test Analysis & Findings
+# Kord API Test Analysis & Findings (All solved)
 
 ## Executive Summary
 
