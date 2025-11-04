@@ -1,0 +1,41 @@
+meta {
+  name: logout
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{base_url}}/auth/logout
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 for successful logout", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should include success message", function () {
+    expect(res.getBody()).to.have.property("message");
+    expect(res.getBody().message).to.equal("Logout successful");
+  });
+
+  test("Response should clear access token cookie", function () {
+    const cookies = res.getHeaders()['set-cookie'];
+    expect(cookies).to.be.an('array');
+
+    const clearsAccessToken = cookies.some(c =>
+      c.includes('kord_access_token') && c.includes('Max-Age=0')
+    );
+    expect(clearsAccessToken).to.be.true;
+  });
+
+  test("Response should clear refresh token cookie", function () {
+    const cookies = res.getHeaders()['set-cookie'];
+
+    const clearsRefreshToken = cookies.some(c =>
+      c.includes('kord_refresh_token') && c.includes('Max-Age=0')
+    );
+    expect(clearsRefreshToken).to.be.true;
+  });
+}

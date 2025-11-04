@@ -39,6 +39,10 @@ The tests cover all auth endpoints with the following scenarios:
 - ✅ `me-without-token.bru` - Reject request without token (401)
 - ✅ `me-invalid-token.bru` - Reject invalid token (401)
 
+### 6. Logout
+
+- ✅ `logout.bru` - Successfully logout and clear session cookies
+
 ## Running the Tests
 
 ### Prerequisites
@@ -51,28 +55,33 @@ The tests cover all auth endpoints with the following scenarios:
 
 ### Execution Order
 
-The tests are numbered sequentially (seq 1-18) and should be run in order:
+To run the complete authentication flow, execute tests in this order:
 
-1. **Check email availability** (seq 1)
-2. **Register a new user** (seq 2) - This sets up environment variables used by later tests
-3. **Check email now unavailable** (seq 3)
-4. **Test duplicate scenarios** (seq 4-5)
-5. **Test validation errors** (seq 6-8)
-6. **Test login flows** (seq 9-13)
-7. **Test token refresh** (seq 14-15)
-8. **Test authenticated endpoint** (seq 16-18)
+1. **check-email-available.bru** (seq 1) - Verify email is available
+2. **register.bru** (seq 2) - Register new user (sets cookies automatically)
+3. **me.bru** (seq 16) - Verify authenticated access works
+4. **login-with-email.bru** (seq 9) - Login with email
+5. **login-with-username.bru** (seq 10) - Login with username
+6. **refresh-token.bru** (seq 14) - Refresh access token
+7. **logout.bru** (seq 20) - Logout and clear session
+8. **me-without-token.bru** (seq 17) - Verify unauthenticated access fails
+
+### Cookie-Based Authentication
+
+This API uses cookie-based JWT authentication. Bruno automatically handles cookies:
+
+- Cookies are set when you login/register
+- Cookies are sent with subsequent requests automatically
+- No need to manually manage tokens
+- Run logout test to clear cookies between test runs
 
 ### Environment Variables
 
-The `register.bru` test automatically sets the following environment variables for use in subsequent tests:
+The tests no longer store tokens. They only use:
 
-- `accessToken` - JWT access token
-- `refreshToken` - JWT refresh token
-- `testUsername` - The registered username
-- `testEmail` - The registered email
-- `testPassword` - The registration password
-
-These variables are used by the login, refresh, and me tests.
+- `testEmail` - Email for testing
+- `testUsername` - Username for testing
+- `testPassword` - Password for testing
 
 ### Running All Tests
 

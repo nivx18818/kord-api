@@ -4,6 +4,7 @@
 
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import { ChannelStatus, ChannelType } from 'generated/prisma';
 import request from 'supertest';
 
@@ -41,8 +42,8 @@ describe('Simplified User Journey (e2e)', () => {
   };
 
   // Auth & Entity IDs
-  let user1Token: string;
-  let user2Token: string;
+  let user1Cookies: string[];
+  let user2Cookies: string[];
   let user1Id: number;
   let user2Id: number;
   let serverId: number;
@@ -56,6 +57,10 @@ describe('Simplified User Journey (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply cookie parser middleware
+    app.use(cookieParser());
+
     app.useGlobalPipes(
       new ValidationPipe({
         forbidNonWhitelisted: true,
@@ -111,12 +116,16 @@ describe('Simplified User Journey (e2e)', () => {
         .send(user1)
         .expect(HttpStatus.CREATED);
 
-      expect(response.body).toHaveProperty('accessToken');
-      user1Token = response.body.accessToken;
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Registration successful');
+
+      // Store cookies for subsequent requests
+      const cookies = response.headers['set-cookie'];
+      user1Cookies = Array.isArray(cookies) ? cookies : [cookies];
 
       const meResponse = await request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       user1Id = meResponse.body.id;
@@ -128,11 +137,16 @@ describe('Simplified User Journey (e2e)', () => {
         .send(user2)
         .expect(HttpStatus.CREATED);
 
-      user2Token = response.body.accessToken;
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Registration successful');
+
+      // Store cookies for subsequent requests
+      const cookies = response.headers['set-cookie'];
+      user2Cookies = Array.isArray(cookies) ? cookies : [cookies];
 
       const meResponse = await request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       user2Id = meResponse.body.id;
@@ -144,7 +158,8 @@ describe('Simplified User Journey (e2e)', () => {
         .send({ password: user1.password, usernameOrEmail: user1.username })
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveProperty('accessToken');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Login successful');
     });
 
     it('should refresh tokens', async () => {
@@ -153,12 +168,17 @@ describe('Simplified User Journey (e2e)', () => {
         .send({ password: user1.password, usernameOrEmail: user1.email })
         .expect(HttpStatus.OK);
 
+      const loginCookies = Array.isArray(loginRes.headers['set-cookie'])
+        ? loginRes.headers['set-cookie']
+        : [loginRes.headers['set-cookie']];
+
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
-        .send({ refreshToken: loginRes.body.refreshToken })
+        .set('Cookie', loginCookies)
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveProperty('accessToken');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Token refreshed');
     });
   });
 
@@ -209,7 +229,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should get server details via API', async () => {
       const response = await request(app.getHttpServer())
         .get(`/servers/${serverId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.id).toBe(serverId);
@@ -219,7 +239,7 @@ describe('Simplified User Journey (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/servers')
         .query({ userId: user1Id })
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -233,7 +253,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should create invite', async () => {
       const response = await request(app.getHttpServer())
         .post(`/servers/${serverId}/invites`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ createdBy: user1Id, expiresInDays: 7 })
         .expect(HttpStatus.CREATED);
 
@@ -244,7 +264,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should redeem invite', async () => {
       const response = await request(app.getHttpServer())
         .post(`/servers/invites/${inviteCode}/redeem`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .send({ userId: user2Id })
         .expect(HttpStatus.CREATED);
 
@@ -255,7 +275,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should verify membership', async () => {
       const response = await request(app.getHttpServer())
         .get(`/memberships/${user2Id}/${serverId}`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.userId).toBe(user2Id);
@@ -266,7 +286,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should create text channel', async () => {
       const response = await request(app.getHttpServer())
         .post('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({
           name: 'general',
           serverId,
@@ -282,7 +302,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should list channels', async () => {
       const response = await request(app.getHttpServer())
         .get('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -291,7 +311,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should update channel', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/channels/${textChannelId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ name: 'general-chat', status: ChannelStatus.PUBLIC })
         .expect(HttpStatus.OK);
 
@@ -303,7 +323,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should send message', async () => {
       const response = await request(app.getHttpServer())
         .post('/messages')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({
           channelId: textChannelId,
           content: JSON.stringify({ text: 'Hello World!' }),
@@ -319,7 +339,7 @@ describe('Simplified User Journey (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/messages')
         .query({ channelId: textChannelId })
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body).toHaveProperty('items');
@@ -329,7 +349,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should edit message', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/messages/${messageId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ content: JSON.stringify({ text: 'Updated!' }) })
         .expect(HttpStatus.OK);
 
@@ -341,7 +361,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should add reaction', async () => {
       const response = await request(app.getHttpServer())
         .post('/reactions')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ emoji: '👍', messageId, userId: user1Id })
         .expect(HttpStatus.CREATED);
 
@@ -351,7 +371,7 @@ describe('Simplified User Journey (e2e)', () => {
     it('should list reactions', async () => {
       const response = await request(app.getHttpServer())
         .get('/reactions')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -368,14 +388,14 @@ describe('Simplified User Journey (e2e)', () => {
     it('should return 404 for non-existent server', async () => {
       await request(app.getHttpServer())
         .get('/servers/999999')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.NOT_FOUND);
     });
 
     it('should return 400 for invalid data', async () => {
       await request(app.getHttpServer())
         .post('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ name: 'test' }) // Missing serverId
         .expect(HttpStatus.BAD_REQUEST);
     });

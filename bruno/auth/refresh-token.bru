@@ -6,20 +6,14 @@ meta {
 
 post {
   url: {{base_url}}/auth/refresh
-  body: json
+  body: none
   auth: none
 }
 
-body:json {
-  {
-    "refreshToken": "{{refreshToken}}"
-  }
-}
-
 script:post-response {
+  // Cookies are automatically stored by Bruno
   if (res.getStatus() === 200) {
-    bru.setEnvVar("accessToken", res.getBody().accessToken);
-    bru.setEnvVar("refreshToken", res.getBody().refreshToken);
+    console.log("Token refreshed - new cookies set automatically");
   }
 }
 
@@ -28,13 +22,24 @@ tests {
     expect(res.getStatus()).to.equal(200);
   });
 
-  test("Response should include new accessToken", function () {
-    expect(res.getBody()).to.have.property("accessToken");
-    expect(res.getBody().accessToken).to.be.a("string");
+  test("Response should include success message", function () {
+    expect(res.getBody()).to.have.property("message");
+    expect(res.getBody().message).to.equal("Token refreshed");
   });
 
-  test("Response should include new refreshToken", function () {
-    expect(res.getBody()).to.have.property("refreshToken");
-    expect(res.getBody().refreshToken).to.be.a("string");
+  test("Response should set new access token cookie", function () {
+    const cookies = res.getHeaders()['set-cookie'];
+    expect(cookies).to.be.an('array');
+
+    const hasAccessToken = cookies.some(c => c.includes('kord_access_token'));
+    expect(hasAccessToken).to.be.true;
+  });
+
+  test("Response should set new refresh token cookie", function () {
+    const cookies = res.getHeaders()['set-cookie'];
+    expect(cookies).to.be.an('array');
+
+    const hasRefreshToken = cookies.some(c => c.includes('kord_refresh_token'));
+    expect(hasRefreshToken).to.be.true;
   });
 }

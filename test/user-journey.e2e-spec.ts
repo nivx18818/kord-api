@@ -4,6 +4,7 @@
 
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import { ChannelStatus, ChannelType } from 'generated/prisma';
 import request from 'supertest';
 
@@ -47,9 +48,9 @@ describe('User Journey (e2e)', () => {
     username: `user2_${timestamp}`,
   };
 
-  // Authentication tokens
-  let user1Token: string;
-  let user2Token: string;
+  // Authentication cookies
+  let user1Cookies: string[];
+  let user2Cookies: string[];
   let user1Id: number;
   let user2Id: number;
 
@@ -69,6 +70,10 @@ describe('User Journey (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply cookie parser middleware
+    app.use(cookieParser());
+
     app.useGlobalPipes(
       new ValidationPipe({
         forbidNonWhitelisted: true,
@@ -158,14 +163,17 @@ describe('User Journey (e2e)', () => {
         .send(user1)
         .expect(HttpStatus.CREATED);
 
-      expect(response.body).toHaveProperty('accessToken');
-      expect(response.body).toHaveProperty('refreshToken');
-      user1Token = response.body.accessToken;
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Registration successful');
+
+      // Store cookies for subsequent requests
+      const cookies = response.headers['set-cookie'];
+      user1Cookies = Array.isArray(cookies) ? cookies : [cookies];
 
       // Get user ID from /auth/me
       const meResponse = await request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       user1Id = meResponse.body.id;
@@ -179,13 +187,17 @@ describe('User Journey (e2e)', () => {
         .send(user2)
         .expect(HttpStatus.CREATED);
 
-      expect(response.body).toHaveProperty('accessToken');
-      user2Token = response.body.accessToken;
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Registration successful');
+
+      // Store cookies for subsequent requests
+      const cookies = response.headers['set-cookie'];
+      user2Cookies = Array.isArray(cookies) ? cookies : [cookies];
 
       // Get user ID
       const meResponse = await request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       user2Id = meResponse.body.id;
@@ -219,12 +231,16 @@ describe('User Journey (e2e)', () => {
         })
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveProperty('accessToken');
-      user1Token = response.body.accessToken; // Update token
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Login successful');
+
+      // Update cookies
+      const cookies = response.headers['set-cookie'];
+      user1Cookies = Array.isArray(cookies) ? cookies : [cookies];
     });
 
     it('should refresh tokens for user1', async () => {
-      // First login to get refresh token
+      // First login to get cookies
       const loginResponse = await request(app.getHttpServer())
         .post('/auth/login')
         .send({
@@ -233,16 +249,18 @@ describe('User Journey (e2e)', () => {
         })
         .expect(HttpStatus.OK);
 
-      const refreshToken = loginResponse.body.refreshToken;
+      const loginCookies = Array.isArray(loginResponse.headers['set-cookie'])
+        ? loginResponse.headers['set-cookie']
+        : [loginResponse.headers['set-cookie']];
 
       // Refresh tokens
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
-        .send({ refreshToken })
+        .set('Cookie', loginCookies)
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveProperty('accessToken');
-      expect(response.body).toHaveProperty('refreshToken');
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Token refreshed');
     });
   });
 
@@ -255,7 +273,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/servers')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(serverData)
         .expect(HttpStatus.CREATED);
 
@@ -268,7 +286,7 @@ describe('User Journey (e2e)', () => {
     it('should get server details', async () => {
       const response = await request(app.getHttpServer())
         .get(`/servers/${serverId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.id).toBe(serverId);
@@ -278,7 +296,7 @@ describe('User Journey (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/servers')
         .query({ userId: user1Id })
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -292,7 +310,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/servers/${serverId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -309,7 +327,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post(`/servers/${serverId}/invites`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(inviteData)
         .expect(HttpStatus.CREATED);
 
@@ -321,7 +339,7 @@ describe('User Journey (e2e)', () => {
     it('should list server invites', async () => {
       const response = await request(app.getHttpServer())
         .get(`/servers/${serverId}/invites`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -331,7 +349,7 @@ describe('User Journey (e2e)', () => {
     it('should allow user2 to redeem the invite', async () => {
       const response = await request(app.getHttpServer())
         .post(`/servers/invites/${inviteCode}/redeem`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .send({ userId: user2Id })
         .expect(HttpStatus.CREATED);
 
@@ -344,7 +362,7 @@ describe('User Journey (e2e)', () => {
     it('should verify user2 is now a member', async () => {
       const response = await request(app.getHttpServer())
         .get(`/memberships/${user2Id}/${serverId}`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.userId).toBe(user2Id);
@@ -354,7 +372,7 @@ describe('User Journey (e2e)', () => {
     it('should verify user2 has a default Member role with basic permissions', async () => {
       const response = await request(app.getHttpServer())
         .get(`/memberships/${user2Id}/${serverId}`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body).toHaveProperty('role');
@@ -384,7 +402,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/roles')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(roleData)
         .expect(HttpStatus.CREATED);
 
@@ -405,7 +423,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/roles')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(roleData)
         .expect(HttpStatus.CREATED);
 
@@ -416,7 +434,7 @@ describe('User Journey (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/roles')
         .query({ serverId })
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -426,7 +444,7 @@ describe('User Journey (e2e)', () => {
     it('should assign member role to user2', async () => {
       const response = await request(app.getHttpServer())
         .post(`/servers/${serverId}/members/${user2Id}/roles/${memberRoleId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body).toHaveProperty('roleId');
@@ -440,7 +458,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/roles/${memberRoleId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -459,7 +477,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(channelData)
         .expect(HttpStatus.CREATED);
 
@@ -479,7 +497,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(channelData)
         .expect(HttpStatus.CREATED);
 
@@ -490,7 +508,7 @@ describe('User Journey (e2e)', () => {
     it('should list all channels', async () => {
       const response = await request(app.getHttpServer())
         .get('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -499,7 +517,7 @@ describe('User Journey (e2e)', () => {
     it('should get channel details', async () => {
       const response = await request(app.getHttpServer())
         .get(`/channels/${textChannelId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.id).toBe(textChannelId);
@@ -513,7 +531,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/channels/${textChannelId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -531,7 +549,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/messages')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(messageData)
         .expect(HttpStatus.CREATED);
 
@@ -551,7 +569,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/messages')
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .send(replyData)
         .expect(HttpStatus.CREATED);
 
@@ -563,7 +581,7 @@ describe('User Journey (e2e)', () => {
       const response = await request(app.getHttpServer())
         .get('/messages')
         .query({ channelId: textChannelId })
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body).toHaveProperty('items');
@@ -574,7 +592,7 @@ describe('User Journey (e2e)', () => {
     it('should get a specific message', async () => {
       const response = await request(app.getHttpServer())
         .get(`/messages/${messageId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.id).toBe(messageId);
@@ -587,7 +605,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/messages/${messageId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -599,7 +617,7 @@ describe('User Journey (e2e)', () => {
     it('should soft delete a message', async () => {
       const response = await request(app.getHttpServer())
         .delete(`/messages/${threadMessageId}`)
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body).toHaveProperty('deletedAt');
@@ -617,7 +635,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/reactions')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(reactionData)
         .expect(HttpStatus.CREATED);
 
@@ -635,7 +653,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/reactions')
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .send(reactionData)
         .expect(HttpStatus.CREATED);
 
@@ -645,7 +663,7 @@ describe('User Journey (e2e)', () => {
     it('should list all reactions', async () => {
       const response = await request(app.getHttpServer())
         .get('/reactions')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -655,7 +673,7 @@ describe('User Journey (e2e)', () => {
     it('should get a specific reaction', async () => {
       const response = await request(app.getHttpServer())
         .get(`/reactions/${messageId}/${user1Id}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(response.body.messageId).toBe(messageId);
@@ -669,7 +687,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/reactions/${messageId}/${user1Id}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -679,7 +697,7 @@ describe('User Journey (e2e)', () => {
     it('should remove a reaction', async () => {
       await request(app.getHttpServer())
         .delete(`/reactions/${messageId}/${user1Id}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
     });
   });
@@ -694,7 +712,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/channels/dm')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(dmData)
         .expect(HttpStatus.CREATED);
 
@@ -712,7 +730,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .post('/messages')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(dmMessageData)
         .expect(HttpStatus.CREATED);
 
@@ -722,7 +740,7 @@ describe('User Journey (e2e)', () => {
     it('should get user DMs', async () => {
       const response = await request(app.getHttpServer())
         .get(`/channels/user/${user1Id}/dms`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -738,7 +756,7 @@ describe('User Journey (e2e)', () => {
     it('should list all memberships', async () => {
       const response = await request(app.getHttpServer())
         .get('/memberships')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -751,7 +769,7 @@ describe('User Journey (e2e)', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/memberships/${user2Id}/${serverId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(updateData)
         .expect(HttpStatus.OK);
 
@@ -765,7 +783,7 @@ describe('User Journey (e2e)', () => {
       // Note: Commenting out to keep user2 in server for other tests
       // await request(app.getHttpServer())
       //   .delete(`/memberships/${user2Id}/${serverId}`)
-      //   .set('Authorization', `Bearer ${user1Token}`)
+      //   .set('Cookie', user1Cookies)
       //   .expect(HttpStatus.OK);
     });
   });
@@ -774,21 +792,21 @@ describe('User Journey (e2e)', () => {
     it('should delete a channel', async () => {
       await request(app.getHttpServer())
         .delete(`/channels/${voiceChannelId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
     });
 
     it('should delete an invite', async () => {
       await request(app.getHttpServer())
         .delete(`/servers/${serverId}/invites/${inviteCode}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
     });
 
     it('should delete a role', async () => {
       await request(app.getHttpServer())
         .delete(`/roles/${memberRoleId}`)
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.OK);
     });
 
@@ -812,21 +830,21 @@ describe('User Journey (e2e)', () => {
     it('should return 404 for non-existent server', async () => {
       await request(app.getHttpServer())
         .get('/servers/999999')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.NOT_FOUND);
     });
 
     it('should return 404 for non-existent channel', async () => {
       await request(app.getHttpServer())
         .get('/channels/999999')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.NOT_FOUND);
     });
 
     it('should return 404 for non-existent message', async () => {
       await request(app.getHttpServer())
         .get('/messages/999999')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .expect(HttpStatus.NOT_FOUND);
     });
 
@@ -840,7 +858,7 @@ describe('User Journey (e2e)', () => {
 
       await request(app.getHttpServer())
         .post('/channels')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send(invalidChannelData)
         .expect(HttpStatus.BAD_REQUEST);
     });
@@ -848,7 +866,7 @@ describe('User Journey (e2e)', () => {
     it('should return 400 for missing required fields', async () => {
       await request(app.getHttpServer())
         .post('/servers')
-        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', user1Cookies)
         .send({ name: 'Test' }) // Missing servername
         .expect(HttpStatus.BAD_REQUEST);
     });
@@ -861,7 +879,7 @@ describe('User Journey (e2e)', () => {
 
       await request(app.getHttpServer())
         .post('/servers')
-        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', user2Cookies)
         .send(duplicateData)
         .expect(HttpStatus.CONFLICT);
     });

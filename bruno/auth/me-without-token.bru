@@ -14,4 +14,10 @@ tests {
   test("Status should be 401 without token", function () {
     expect(res.getStatus()).to.equal(401);
   });
+
+  test("Response should include error information", function () {
+    expect(res.getBody()).to.have.property("message");
+    expect(res.getBody()).to.have.property("statusCode");
+    expect(res.getBody().statusCode).to.equal(401);
+  });
 }

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
 import { AppModule } from '@/app.module';
@@ -12,8 +12,7 @@ import { PrismaService } from '@/modules/prisma/prisma.service';
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let accessToken: string;
-  let refreshToken: string;
+  let authCookies: string[];
 
   const testUser = {
     dateOfBirth: '1990-01-01',
@@ -28,6 +27,10 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+
+    // Apply cookie parser middleware
+    app.use(cookieParser());
+
     app.useGlobalPipes(
       new ValidationPipe({ forbidNonWhitelisted: true, whitelist: true }),
     );
@@ -59,10 +62,15 @@ describe('AuthController (e2e)', () => {
 
     it('should return available: false after registration', async () => {
       // First register
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post('/auth/register')
         .send(testUser)
         .expect(HttpStatus.CREATED);
+
+      // Store cookies for subsequent tests
+      authCookies = Array.isArray(response.headers['set-cookie'])
+        ? response.headers['set-cookie']
+        : [response.headers['set-cookie']];
 
       // Then check email
       return request(app.getHttpServer())
@@ -76,7 +84,7 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/register (POST)', () => {
-    it('should register a new user successfully', () => {
+    it('should register a new user successfully and set cookies', () => {
       return request(app.getHttpServer())
         .post('/auth/register')
         .send({
@@ -86,8 +94,22 @@ describe('AuthController (e2e)', () => {
         })
         .expect(HttpStatus.CREATED)
         .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toBe('Registration successful');
+
+          // Verify cookies are set
+          const cookies = res.headers['set-cookie'];
+          expect(cookies).toBeDefined();
+          const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_access_token')),
+          ).toBe(true);
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_refresh_token')),
+          ).toBe(true);
+          expect(cookieArray.some((c: string) => c.includes('HttpOnly'))).toBe(
+            true,
+          );
         });
     });
 
@@ -147,10 +169,21 @@ describe('AuthController (e2e)', () => {
         })
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
-          accessToken = res.body.accessToken;
-          refreshToken = res.body.refreshToken;
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toBe('Login successful');
+
+          // Verify cookies are set
+          const cookies = res.headers['set-cookie'];
+          const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_access_token')),
+          ).toBe(true);
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_refresh_token')),
+          ).toBe(true);
+
+          // Store cookies for subsequent tests
+          authCookies = cookieArray;
         });
     });
 
@@ -163,8 +196,8 @@ describe('AuthController (e2e)', () => {
         })
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toBe('Login successful');
         });
     });
 
@@ -200,37 +233,45 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/refresh (POST)', () => {
-    it('should refresh tokens successfully with valid refresh token', () => {
+    it('should refresh tokens successfully with valid refresh token cookie', () => {
       return request(app.getHttpServer())
         .post('/auth/refresh')
-        .send({
-          refreshToken,
-        })
+        .set('Cookie', authCookies)
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body).toHaveProperty('accessToken');
-          expect(res.body).toHaveProperty('refreshToken');
-          // Update tokens for next tests
-          accessToken = res.body.accessToken;
-          refreshToken = res.body.refreshToken;
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toBe('Token refreshed');
+
+          // Verify new cookies are set
+          const newCookies = res.headers['set-cookie'];
+          const cookieArray = Array.isArray(newCookies)
+            ? newCookies
+            : [newCookies];
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_access_token')),
+          ).toBe(true);
+          expect(
+            cookieArray.some((c: string) => c.includes('kord_refresh_token')),
+          ).toBe(true);
+
+          // Update cookies for next tests
+          authCookies = cookieArray;
         });
     });
 
-    it('should return 401 for invalid refresh token', () => {
+    it('should return 401 for invalid refresh token cookie', () => {
       return request(app.getHttpServer())
         .post('/auth/refresh')
-        .send({
-          refreshToken: 'invalid-token',
-        })
+        .set('Cookie', ['kord_refresh_token=invalid-token'])
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
   describe('/auth/me (GET)', () => {
-    it('should return user profile with valid access token', () => {
+    it('should return user profile with valid cookie', () => {
       return request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', authCookies)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body).toHaveProperty('id');
@@ -240,16 +281,65 @@ describe('AuthController (e2e)', () => {
         });
     });
 
-    it('should return 401 without access token', () => {
+    it('should return 401 without cookie', () => {
       return request(app.getHttpServer())
         .get('/auth/me')
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
-    it('should return 401 with invalid access token', () => {
+    it('should return 401 with invalid cookie', () => {
       return request(app.getHttpServer())
         .get('/auth/me')
-        .set('Authorization', 'Bearer invalid-token')
+        .set('Cookie', ['kord_access_token=invalid-token'])
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
+  describe('/auth/logout (POST)', () => {
+    it('should logout and clear cookies', () => {
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Cookie', authCookies)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('message');
+          expect(res.body.message).toBe('Logout successful');
+
+          // Verify cookies are cleared
+          const cookies = res.headers['set-cookie'];
+          if (cookies) {
+            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+            // Check if cookies are being cleared (either Max-Age=0 or expires in the past)
+            const hasClearing = cookieArray.some(
+              (c: string) => c.includes('Max-Age=0') || c.includes('Expires='),
+            );
+            expect(hasClearing).toBe(true);
+          }
+        });
+    });
+
+    it('should require authentication', () => {
+      return request(app.getHttpServer())
+        .post('/auth/logout')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should prevent access after logout', async () => {
+      // Logout
+      const logoutResponse = await request(app.getHttpServer())
+        .post('/auth/logout')
+        .set('Cookie', authCookies)
+        .expect(HttpStatus.OK);
+
+      const clearedCookies = logoutResponse.headers['set-cookie'];
+      const cookieArray = Array.isArray(clearedCookies)
+        ? clearedCookies
+        : [clearedCookies];
+
+      // Try to access protected endpoint with cleared cookies
+      return request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Cookie', cookieArray)
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
