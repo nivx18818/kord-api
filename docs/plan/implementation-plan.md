@@ -101,6 +101,28 @@ This phase focuses on implementing consistent API response formats and comprehen
 
 Refer to the detailed plan in `docs/plan/flow-fixing.md` for comprehensive steps.
 
+**Phase 3.6: Cookie-Based Authentication**
+
+Refer to the detailed plan in `docs/plan/cookie-auth-implementation.md` for comprehensive steps.
+
+- [x] Install cookie-parser dependency and types
+- [x] Configure cookie-parser middleware in main.ts
+- [x] Create cookie configuration constants
+- [x] Create cookie extractor utility for passport-jwt
+- [x] Update JwtStrategy to extract JWT from cookies
+- [x] Modify login endpoint to set cookies
+- [x] Modify register endpoint to set cookies
+- [x] Modify refresh endpoint to read/set cookies
+- [x] Add logout endpoint to clear cookies
+- [x] Update AuthService with logout logic
+- [x] Update WebSocket gateway for cookie authentication
+- [x] Update Bruno tests for cookie-based auth
+- [x] Update E2E tests for cookie-based auth
+- [x] Add environment variables for cookie configuration
+- [x] Update documentation (README, authentication guide)
+- [x] Verify all protected endpoints work with cookies
+- [x] Clean up unused DTOs (RefreshTokenDto)
+
 **Phase 4: Video Calls**
 
 - [ ] Install WebSocket/mediasoup dependencies.

@@ -13,6 +13,9 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
+  // CORS Configuration for Cookie-Based Authentication
+  // credentials: true - Required to allow cookies in cross-origin requests
+  // origin: Must be specific URL, not wildcard (*) when credentials are enabled
   app.enableCors({
     credentials: true,
     origin: process.env.CLIENT_URL,
