@@ -12,6 +12,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
+import { ErrorCode } from '@/common/constants/error-codes';
 import { WsExceptionFilter } from '@/common/filters/ws-exception.filter';
 
 import type { AuthenticatedSocket } from './types/socket-data.type';
@@ -95,7 +96,11 @@ export class MessagesGateway
       console.log(`Client connected: ${client.id} (User: ${payload.username})`);
     } catch (error) {
       console.error('WebSocket authentication failed:', error);
-      client.emit('error', { message: 'Authentication failed' });
+      client.emit('error', {
+        code: ErrorCode.UNAUTHORIZED,
+        event: 'error',
+        message: 'Authentication failed',
+      });
       client.disconnect();
     }
   }

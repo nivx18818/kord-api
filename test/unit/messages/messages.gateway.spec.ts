@@ -1,22 +1,39 @@
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+
+import type { AuthenticatedSocket } from '@/modules/messages/types/socket-data.type';
 
 import { MessagesGateway } from '@/modules/messages/messages.gateway';
 
 describe('MessagesGateway', () => {
   let gateway: MessagesGateway;
   let mockServer: Partial<Server>;
-  let mockSocket: Partial<Socket>;
+  let mockSocket: Partial<AuthenticatedSocket>;
+  let mockJwtService: Partial<JwtService>;
 
   beforeEach(async () => {
+    // Create mock JWT service
+    mockJwtService = {
+      verify: jest.fn(),
+    };
+
     // Create mock server
     mockServer = {
       emit: jest.fn(),
       to: jest.fn().mockReturnThis(),
     };
 
-    // Create mock socket
+    // Create mock socket with user data
     mockSocket = {
+      data: {
+        user: {
+          email: 'test@example.com',
+          id: 1,
+          username: 'testuser',
+        },
+      },
+      disconnect: jest.fn(),
       emit: jest.fn(),
       id: 'test-socket-id',
       join: jest.fn(),
@@ -25,7 +42,13 @@ describe('MessagesGateway', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MessagesGateway],
+      providers: [
+        MessagesGateway,
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+      ],
     }).compile();
 
     gateway = module.get<MessagesGateway>(MessagesGateway);
@@ -99,13 +122,30 @@ describe('MessagesGateway', () => {
   });
 
   describe('handleConnection', () => {
-    it('should log client connection', () => {
+    it('should authenticate and log client connection', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      gateway.handleConnection(mockSocket as Socket);
+      // Mock the JWT verification
+      (mockJwtService.verify as jest.Mock).mockReturnValue({
+        email: 'test@example.com',
+        sub: 1,
+        username: 'testuser',
+      });
+
+      // Add handshake with headers and cookies
+      const socketWithHandshake = {
+        ...mockSocket,
+        handshake: {
+          headers: {
+            cookie: 'kord_access_token=valid-token',
+          },
+        },
+      };
+
+      gateway.handleConnection(socketWithHandshake as AuthenticatedSocket);
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        'Client connected: test-socket-id',
+        'Client connected: test-socket-id (User: testuser)',
       );
 
       consoleSpy.mockRestore();
@@ -116,7 +156,8 @@ describe('MessagesGateway', () => {
     it('should log client disconnection', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      gateway.handleDisconnect(mockSocket as Socket);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      gateway.handleDisconnect(mockSocket as any);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Client disconnected: test-socket-id',
@@ -130,7 +171,10 @@ describe('MessagesGateway', () => {
     it('should join client to channel room', () => {
       const data = { channelId: 1 };
 
-      const result = gateway.handleJoinChannel(data, mockSocket as Socket);
+      const result = gateway.handleJoinChannel(
+        data,
+        mockSocket as AuthenticatedSocket,
+      );
 
       expect(mockSocket.join).toHaveBeenCalledWith('channel-1');
       expect(result).toEqual({
@@ -144,7 +188,10 @@ describe('MessagesGateway', () => {
     it('should remove client from channel room', () => {
       const data = { channelId: 2 };
 
-      const result = gateway.handleLeaveChannel(data, mockSocket as Socket);
+      const result = gateway.handleLeaveChannel(
+        data,
+        mockSocket as AuthenticatedSocket,
+      );
 
       expect(mockSocket.leave).toHaveBeenCalledWith('channel-2');
       expect(result).toEqual({
@@ -170,12 +217,12 @@ describe('MessagesGateway', () => {
         username: 'testuser',
       };
 
-      gateway.handleTyping(data, mockSocket as Socket);
+      gateway.handleTyping(data, mockSocket as AuthenticatedSocket);
 
       expect(mockSocket.to).toHaveBeenCalledWith('channel-1');
       expect(mockSocket.emit).toHaveBeenCalledWith('user-typing', {
         channelId: 1,
-        userId: 10,
+        userId: 1,
         username: 'testuser',
       });
     });
@@ -187,13 +234,13 @@ describe('MessagesGateway', () => {
         username: 'testuser',
       };
 
-      gateway.handleTyping(data, mockSocket as Socket);
+      gateway.handleTyping(data, mockSocket as AuthenticatedSocket);
 
       jest.advanceTimersByTime(3000);
 
       expect(mockSocket.emit).toHaveBeenCalledWith('user-stopped-typing', {
         channelId: 1,
-        userId: 10,
+        userId: 1,
       });
     });
 
@@ -205,11 +252,11 @@ describe('MessagesGateway', () => {
       };
 
       // First typing event
-      gateway.handleTyping(data, mockSocket as Socket);
+      gateway.handleTyping(data, mockSocket as AuthenticatedSocket);
       jest.advanceTimersByTime(1000);
 
       // Second typing event before timeout
-      gateway.handleTyping(data, mockSocket as Socket);
+      gateway.handleTyping(data, mockSocket as AuthenticatedSocket);
       jest.advanceTimersByTime(2000);
 
       // Only the first typing event should be emitted
@@ -218,10 +265,10 @@ describe('MessagesGateway', () => {
       // Complete the full 3 seconds for the second timeout
       jest.advanceTimersByTime(1000);
 
-      // Now stopped-typing should be emitted
+      // Now stopped-typing should be emitted (uses authenticated user id: 1)
       expect(mockSocket.emit).toHaveBeenCalledWith('user-stopped-typing', {
         channelId: 1,
-        userId: 10,
+        userId: 1,
       });
     });
   });
