@@ -151,8 +151,8 @@ export class InvalidChannelTypeException extends BadRequestException {
 export class InvalidCursorException extends BadRequestException {
   constructor() {
     super({
-      code: ErrorCode.INVALID_CURSOR,
-      message: getErrorMessage(ErrorCode.INVALID_CURSOR),
+      code: ErrorCode.INVALID_PAGINATION_CURSOR,
+      message: getErrorMessage(ErrorCode.INVALID_PAGINATION_CURSOR),
     });
   }
 }
@@ -209,8 +209,8 @@ export class InvalidPasswordException extends BadRequestException {
 export class InvalidTokenException extends UnauthorizedException {
   constructor() {
     super({
-      code: ErrorCode.INVALID_TOKEN,
-      message: getErrorMessage(ErrorCode.INVALID_TOKEN),
+      code: ErrorCode.INVALID_ACCESS_TOKEN,
+      message: getErrorMessage(ErrorCode.INVALID_ACCESS_TOKEN),
     });
   }
 }
@@ -361,8 +361,8 @@ export class RateLimitExceededException extends HttpException {
 export class RefreshTokenInvalidException extends UnauthorizedException {
   constructor() {
     super({
-      code: ErrorCode.REFRESH_TOKEN_INVALID,
-      message: getErrorMessage(ErrorCode.REFRESH_TOKEN_INVALID),
+      code: ErrorCode.INVALID_REFRESH_TOKEN,
+      message: getErrorMessage(ErrorCode.INVALID_REFRESH_TOKEN),
     });
   }
 }
@@ -406,8 +406,8 @@ export class ServerNotFoundException extends NotFoundException {
 export class TokenExpiredException extends UnauthorizedException {
   constructor() {
     super({
-      code: ErrorCode.TOKEN_EXPIRED,
-      message: getErrorMessage(ErrorCode.TOKEN_EXPIRED),
+      code: ErrorCode.ACCESS_TOKEN_EXPIRED,
+      message: getErrorMessage(ErrorCode.ACCESS_TOKEN_EXPIRED),
     });
   }
 }
