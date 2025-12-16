@@ -114,7 +114,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       case 'P2002': {
         const target = error.meta?.target as string[] | undefined;
-        const field = target?.[0] || 'field';
+        const field = target?.[0] || 'Field';
 
         let code: ErrorCode;
         let message: string;
