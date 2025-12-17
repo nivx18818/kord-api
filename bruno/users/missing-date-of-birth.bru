@@ -26,7 +26,7 @@ tests {
 
   test("Response should indicate validation error for dateOfBirth", function () {
     const body = res.getBody();
-    expect(body.code).to.equal(40001);
+    expect(body.code).to.equal(40000);
     expect(body.message).to.equal("Validation failed");
     expect(body.errors).to.have.property("dateOfBirth");
     expect(body.errors.dateOfBirth).to.be.an("array");

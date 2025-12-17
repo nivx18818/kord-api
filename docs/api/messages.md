@@ -94,7 +94,7 @@ _403 Forbidden - Insufficient Permissions:_
 
 ```json
 {
-  "code": 40301,
+  "code": 40300,
   "message": "Access denied"
 }
 ```
@@ -359,7 +359,7 @@ _403 Forbidden - Not Message Author:_
 
 ```json
 {
-  "code": 40301,
+  "code": 40300,
   "message": "Access denied"
 }
 ```

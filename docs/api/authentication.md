@@ -82,7 +82,7 @@ _400 Bad Request - Validation Error:_
 
 ```json
 {
-  "code": 40001,
+  "code": 40000,
   "message": "Validation failed",
   "errors": {
     "email": [
@@ -144,7 +144,7 @@ _401 Unauthorized - Invalid Credentials:_
 
 ```json
 {
-  "code": 40101,
+  "code": 40100,
   "message": "Invalid credentials"
 }
 ```
@@ -183,7 +183,7 @@ _401 Unauthorized - Missing Token:_
 
 ```json
 {
-  "code": 40105,
+  "code": 40104,
   "message": "Missing authentication credentials"
 }
 ```
@@ -192,7 +192,7 @@ _401 Unauthorized - Invalid Token:_
 
 ```json
 {
-  "code": 40102,
+  "code": 40101,
   "message": "Invalid authentication token"
 }
 ```
@@ -232,7 +232,7 @@ _401 Unauthorized - Missing/Invalid Refresh Token:_
 
 ```json
 {
-  "code": 40104,
+  "code": 40103,
   "message": "Invalid or expired refresh token"
 }
 ```

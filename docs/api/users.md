@@ -273,7 +273,7 @@ _401 Unauthorized:_
 
 ```json
 {
-  "code": 40101,
+  "code": 40100,
   "message": "Authentication required"
 }
 ```
@@ -321,7 +321,7 @@ _401 Unauthorized:_
 
 ```json
 {
-  "code": 40101,
+  "code": 40100,
   "message": "Authentication required"
 }
 ```
@@ -428,7 +428,7 @@ _400 Bad Request - Already Muted:_
 
 ```json
 {
-  "code": 40001,
+  "code": 40000,
   "message": "User already muted"
 }
 ```
