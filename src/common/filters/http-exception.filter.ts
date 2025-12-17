@@ -8,7 +8,7 @@ import {
 import { Response } from 'express';
 import { Prisma } from 'generated/prisma';
 
-import { ErrorCode } from '../constants/error-codes';
+import { ErrorCode, getErrorMessage } from '../constants/error-codes';
 
 interface ErrorResponse {
   code: number;
@@ -84,11 +84,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       case HttpStatus.BAD_REQUEST:
         return ErrorCode.VALIDATION_ERROR;
       case HttpStatus.CONFLICT:
-        return ErrorCode.EMAIL_ALREADY_EXISTS;
+        return ErrorCode.CONFLICT;
       case HttpStatus.FORBIDDEN:
         return ErrorCode.FORBIDDEN;
       case HttpStatus.NOT_FOUND:
-        return ErrorCode.USER_NOT_FOUND;
+        return ErrorCode.NOT_FOUND;
       case HttpStatus.TOO_MANY_REQUESTS:
         return ErrorCode.RATE_LIMIT_EXCEEDED;
       case HttpStatus.UNAUTHORIZED:
@@ -103,66 +103,54 @@ export class HttpExceptionFilter implements ExceptionFilter {
     message: string;
     statusCode: HttpStatus;
   } {
+    let code: ErrorCode = ErrorCode.DATABASE_ERROR;
+    let message: string = '';
+    let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+
     switch (error.code) {
       case 'P1001':
       case 'P1002':
-        return {
-          code: ErrorCode.DATABASE_ERROR,
-          message: 'Database connection failed',
-          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-        };
+        code = ErrorCode.DATABASE_ERROR;
+        message = 'Database connection failed';
+        statusCode = HttpStatus.SERVICE_UNAVAILABLE;
+        break;
 
       case 'P2002': {
         const target = error.meta?.target as string[] | undefined;
-        const field = target?.[0] || 'Field';
+        const field = target?.[0] ?? '';
 
-        let code: ErrorCode;
-        let message: string;
-
-        if (field === 'email') {
-          code = ErrorCode.EMAIL_ALREADY_EXISTS;
-          message = 'Email already registered';
-        } else if (field === 'username') {
-          code = ErrorCode.USERNAME_ALREADY_EXISTS;
-          message = 'Username already taken';
-        } else if (field === 'servername') {
-          code = ErrorCode.SERVERNAME_ALREADY_EXISTS;
-          message = 'Server name already taken';
-        } else {
-          code = ErrorCode.VALIDATION_ERROR;
-          message = `${field} already exists`;
-        }
-
-        return {
-          code,
-          message,
-          statusCode: HttpStatus.CONFLICT,
+        const codeMap: Record<string, ErrorCode> = {
+          email: ErrorCode.EMAIL_ALREADY_EXISTS,
+          servername: ErrorCode.SERVERNAME_ALREADY_EXISTS,
+          username: ErrorCode.USERNAME_ALREADY_EXISTS,
         };
+
+        code = codeMap[field] ?? ErrorCode.CONFLICT;
+        statusCode = HttpStatus.CONFLICT;
+        break;
       }
 
       // Foreign key constraint failed
       case 'P2003':
-        return {
-          code: ErrorCode.VALIDATION_ERROR,
-          message: 'Invalid reference to related resource',
-          statusCode: HttpStatus.BAD_REQUEST,
-        };
+        code = ErrorCode.VALIDATION_ERROR;
+        message = 'Invalid reference to related resource';
+        statusCode = HttpStatus.BAD_REQUEST;
+        break;
 
       case 'P2025':
-        return {
-          code: ErrorCode.USER_NOT_FOUND,
-          message: 'Resource not found',
-          statusCode: HttpStatus.NOT_FOUND,
-        };
+        code = ErrorCode.NOT_FOUND;
+        statusCode = HttpStatus.NOT_FOUND;
+        break;
 
       default:
         console.error('Unhandled Prisma error:', error);
-        return {
-          code: ErrorCode.DATABASE_ERROR,
-          message: 'Database operation failed',
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        };
     }
+
+    return {
+      code,
+      message: message || getErrorMessage(code),
+      statusCode,
+    };
   }
 
   private transformValidationErrors(
