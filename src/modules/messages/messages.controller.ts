@@ -13,7 +13,7 @@ import {
 import { Permission } from '@/common/constants/permissions.enum';
 import { RequiredPermissions } from '@/common/decorators/required-permissions.decorator';
 import { MessagePaginationDto } from '@/common/dto/pagination.dto';
-import { RolesGuard } from '@/common/guards/roles.guard';
+import { RolesGuard, ServerContext } from '@/common/guards/roles.guard';
 import {
   CurrentUser,
   type RequestUser,
@@ -54,6 +54,7 @@ export class MessagesController {
   }
 
   @Patch(':id')
+  @ServerContext('messageId')
   @RequiredPermissions(Permission.EDIT_MESSAGES)
   update(
     @Param('id') id: string,

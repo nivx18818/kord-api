@@ -19,6 +19,7 @@ describe('RolesGuard', () => {
         {
           provide: Reflector,
           useValue: {
+            get: jest.fn(),
             getAllAndOverride: jest.fn(),
           },
         },

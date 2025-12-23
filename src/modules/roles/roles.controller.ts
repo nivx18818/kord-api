@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ServerContext } from '@/common/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -32,6 +33,7 @@ export class RolesController {
   }
 
   @Get(':id')
+  @ServerContext('roleId')
   findOne(@Param('id') id: string) {
     return this.rolesService.findOne(+id);
   }
