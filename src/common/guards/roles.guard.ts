@@ -13,6 +13,16 @@ import { PrismaService } from '@/modules/prisma/prisma.service';
 import { Permission, PermissionsMap } from '../constants/permissions.enum';
 import { PERMISSIONS_KEY } from '../decorators/required-permissions.decorator';
 
+interface Request {
+  body?: { channelId?: string; serverId?: string };
+  method?: string;
+  params?: { channelId?: string; id?: string; serverId?: string };
+  query?: { channelId?: string; serverId?: string };
+  route?: { path?: string };
+  url?: string;
+  user: RequestUser;
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
@@ -31,15 +41,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{
-      body?: { channelId?: string; serverId?: string };
-      method?: string;
-      params?: { channelId?: string; id?: string; serverId?: string };
-      query?: { channelId?: string; serverId?: string };
-      route?: { path?: string };
-      url?: string;
-      user: RequestUser;
-    }>();
+    const request = context.switchToHttp().getRequest<Request>();
     const user = request.user;
 
     if (!user) {
@@ -192,15 +194,7 @@ export class RolesGuard implements CanActivate {
    * Resolves serverId from request parameters, body, or related entities
    */
   private async resolveServerId(
-    request: {
-      body?: { channelId?: string; serverId?: string };
-      method?: string;
-      params?: { channelId?: string; id?: string; serverId?: string };
-      query?: { channelId?: string; serverId?: string };
-      route?: { path?: string };
-      url?: string;
-      user: RequestUser;
-    },
+    request: Request,
     params: { channelId?: string; id?: string; serverId?: string },
     body: { channelId?: string; serverId?: string },
     query: { channelId?: string; serverId?: string },
