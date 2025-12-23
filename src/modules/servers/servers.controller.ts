@@ -41,14 +41,14 @@ export class ServersController {
     return this.serversService.create(createServerDto, user.id);
   }
 
-  @Post(':id/invites')
+  @Post(':serverId/invites')
   @RequiredPermissions(Permission.MANAGE_INVITES)
   createInvite(
-    @Param('id') id: string,
+    @Param('serverId') serverId: string,
     @Body() createInviteDto: CreateInviteDto,
   ) {
     return this.serversService.createInvite(
-      +id,
+      +serverId,
       createInviteDto.createdBy,
       createInviteDto.expiresInDays,
     );
@@ -70,47 +70,56 @@ export class ServersController {
     return this.serversService.findAll(pagination);
   }
 
-  @Get(':id')
+  @Get(':serverId')
   @RequiredPermissions(Permission.VIEW_CHANNELS)
-  findOne(@Param('id') id: string) {
-    return this.serversService.findOne(+id);
+  findOne(@Param('serverId') serverId: string) {
+    return this.serversService.findOne(+serverId);
   }
 
-  @Get(':id/invites')
+  @Get(':serverId/invites')
   @RequiredPermissions(Permission.MANAGE_INVITES)
-  getServerInvites(@Param('id') id: string) {
-    return this.serversService.getServerInvites(+id);
+  getServerInvites(@Param('serverId') serverId: string) {
+    return this.serversService.getServerInvites(+serverId);
   }
 
-  @Patch(':id')
+  @Patch(':serverId')
   @RequiredPermissions(Permission.MANAGE_SERVERS)
-  update(@Param('id') id: string, @Body() updateServerDto: UpdateServerDto) {
-    return this.serversService.update(+id, updateServerDto);
+  update(
+    @Param('serverId') serverId: string,
+    @Body() updateServerDto: UpdateServerDto,
+  ) {
+    return this.serversService.update(+serverId, updateServerDto);
   }
 
-  @Delete(':id/invites/:code')
+  @Delete(':serverId/invites/:code')
   @RequiredPermissions(Permission.MANAGE_INVITES)
-  deleteInvite(@Param('id') id: string, @Param('code') code: string) {
-    return this.serversService.deleteInvite(code, +id);
+  deleteInvite(
+    @Param('serverId') serverId: string,
+    @Param('code') code: string,
+  ) {
+    return this.serversService.deleteInvite(code, +serverId);
   }
 
-  @Delete(':id')
+  @Delete(':serverId')
   @RequiredPermissions(Permission.MANAGE_SERVERS)
-  remove(@Param('id') id: string) {
-    return this.serversService.remove(+id);
+  remove(@Param('serverId') serverId: string) {
+    return this.serversService.remove(+serverId);
   }
 
-  @Delete(':id/members/:userId/roles')
+  @Delete(':serverId/members/:userId/roles')
   @RequiredPermissions(Permission.MANAGE_ROLES)
-  removeRole(@Param('id') serverId: string, @Param('userId') userId: string) {
+  removeRole(
+    @Param('serverId') serverId: string,
+    @Param('userId') userId: string,
+  ) {
     return this.serversService.removeRole(+serverId, +userId);
   }
 
-  @Post(':id/members/:userId/roles/:roleId')
+  @Post(':serverId/members/:userId/roles/:roleId')
   @HttpCode(HttpStatus.OK)
   @RequiredPermissions(Permission.MANAGE_ROLES)
   assignRole(
-    @Param('id') serverId: string,
+    @Param('serverId') serverId: string,
     @Param('userId') userId: string,
     @Param('roleId') roleId: string,
   ) {

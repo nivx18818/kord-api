@@ -207,10 +207,10 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should resolve serverId from /servers/:id route pattern', async () => {
+    it('should resolve serverId from /servers/:serverId route pattern', async () => {
       const mockContext = createMockExecutionContext({
-        params: { id: '1' },
-        route: { path: '/servers/:id' },
+        params: { serverId: '1' },
+        route: { path: '/servers/:serverId' },
         user: { email: 'test@test.com', id: 1, username: 'testuser' },
       });
 
@@ -247,10 +247,10 @@ describe('RolesGuard', () => {
       });
     });
 
-    it('should resolve serverId from /servers/:id/invites route pattern', async () => {
+    it('should resolve serverId from /servers/:serverId/invites route pattern', async () => {
       const mockContext = createMockExecutionContext({
-        params: { id: '1' },
-        route: { path: '/servers/:id/invites' },
+        params: { serverId: '1' },
+        route: { path: '/servers/:serverId/invites' },
         user: { email: 'test@test.com', id: 1, username: 'testuser' },
       });
 
@@ -283,10 +283,10 @@ describe('RolesGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should resolve serverId from channel when accessing /channels/:id', async () => {
+    it('should resolve serverId from channel when accessing /channels/:channelId', async () => {
       const mockContext = createMockExecutionContext({
-        params: { id: '1' },
-        route: { path: '/channels/:id' },
+        params: { channelId: '1' },
+        route: { path: '/channels/:channelId' },
         user: { email: 'test@test.com', id: 1, username: 'testuser' },
       });
 

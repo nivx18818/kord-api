@@ -21,7 +21,13 @@ import { PERMISSIONS_KEY } from '../decorators/required-permissions.decorator';
 interface Request {
   body?: { channelId?: string; serverId?: string };
   method?: string;
-  params?: { channelId?: string; id?: string; serverId?: string };
+  params?: {
+    channelId?: string;
+    id?: string;
+    messageId?: string;
+    roleId?: string;
+    serverId?: string;
+  };
   query?: { channelId?: string; serverId?: string };
   route?: { path?: string };
   url?: string;
@@ -269,18 +275,11 @@ export class RolesGuard implements CanActivate {
 
   /**
    * Resolves serverId from request parameters, body, or related entities
-   * Uses @ServerContext() decorator hints for efficient resolution
    */
   private async resolveServerId(
     context: ExecutionContext,
     request: Request,
   ): Promise<ServerResolution> {
-    // Check for explicit server context hint from decorator
-    const contextSource = this.reflector.get<string>(
-      'serverContext',
-      context.getHandler(),
-    );
-
     const params = request.params || {};
     const body = request.body || {};
     const query = request.query || {};
@@ -293,59 +292,39 @@ export class RolesGuard implements CanActivate {
       return { isDM: false, serverId: parseInt(body.serverId, 10) };
     }
 
-    // Priority 2: Use decorator hint to resolve efficiently
+    // Priority 2: Resolve from explicit parameter names
+    if (params.channelId) {
+      return this.resolveServerFromChannel(params.channelId, request.user.id);
+    }
+    if (params.messageId) {
+      return this.resolveServerFromMessage(params.messageId, request.user.id);
+    }
+    if (params.roleId) {
+      return this.resolveServerFromRole(params.roleId);
+    }
+
+    // Priority 3: Check channelId in body or query (for POST/PATCH operations)
+    const targetChannelId = body.channelId || query.channelId;
+    if (targetChannelId) {
+      return this.resolveServerFromChannel(targetChannelId, request.user.id);
+    }
+
+    // Priority 4: Check for explicit decorator hint as fallback
+    const contextSource = this.reflector.get<string>(
+      'serverContext',
+      context.getHandler(),
+    );
+
     if (contextSource) {
       switch (contextSource) {
         case 'body':
           return body.serverId
             ? { isDM: false, serverId: parseInt(body.serverId, 10) }
             : { isDM: false, serverId: null };
-        case 'channelId': {
-          const channelId =
-            params.channelId || body.channelId || query.channelId;
-          return this.resolveServerFromChannel(channelId, request.user.id);
-        }
-        case 'messageId':
-          return this.resolveServerFromMessage(params.id, request.user.id);
         case 'params':
           return params.id
             ? { isDM: false, serverId: parseInt(params.id, 10) }
             : { isDM: false, serverId: null };
-        case 'roleId':
-          return this.resolveServerFromRole(params.id);
-      }
-    }
-
-    // Priority 3: Try to infer from available params
-    const targetChannelId =
-      params.channelId || body.channelId || query.channelId;
-    if (targetChannelId) {
-      return this.resolveServerFromChannel(targetChannelId, request.user.id);
-    }
-
-    // Priority 4: Fallback to route-based inference for backwards compatibility
-    // This maintains existing behavior but is less preferred than explicit decoration
-    if (params.id) {
-      const routePath = request.route?.path || '';
-
-      // Direct server routes (/servers/:id)
-      if (routePath.startsWith('/servers/:id')) {
-        return { isDM: false, serverId: parseInt(params.id, 10) };
-      }
-
-      // Channel routes (/channels/:id)
-      if (routePath.startsWith('/channels/:id')) {
-        return this.resolveServerFromChannel(params.id, request.user.id);
-      }
-
-      // Message routes (/messages/:id)
-      if (routePath.startsWith('/messages/:id')) {
-        return this.resolveServerFromMessage(params.id, request.user.id);
-      }
-
-      // Role routes (/roles/:id)
-      if (routePath.startsWith('/roles/:id')) {
-        return this.resolveServerFromRole(params.id);
       }
     }
 

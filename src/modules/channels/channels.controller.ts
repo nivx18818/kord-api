@@ -37,10 +37,10 @@ export class ChannelsController {
     return this.channelsService.findAll();
   }
 
-  @Get(':id')
+  @Get(':channelId')
   @RequiredPermissions(Permission.VIEW_CHANNELS)
-  findOne(@Param('id') id: string) {
-    return this.channelsService.findOne(+id);
+  findOne(@Param('channelId') channelId: string) {
+    return this.channelsService.findOne(+channelId);
   }
 
   @Post('dm')
@@ -57,16 +57,19 @@ export class ChannelsController {
     return this.channelsService.getUserDMs(+userId);
   }
 
-  @Patch(':id')
+  @Patch(':channelId')
   @RequiredPermissions(Permission.MANAGE_CHANNELS)
-  update(@Param('id') id: string, @Body() updateChannelDto: UpdateChannelDto) {
-    return this.channelsService.update(+id, updateChannelDto);
+  update(
+    @Param('channelId') channelId: string,
+    @Body() updateChannelDto: UpdateChannelDto,
+  ) {
+    return this.channelsService.update(+channelId, updateChannelDto);
   }
 
-  @Delete(':id')
+  @Delete(':channelId')
   @RequiredPermissions(Permission.MANAGE_CHANNELS)
-  remove(@Param('id') id: string) {
-    return this.channelsService.remove(+id);
+  remove(@Param('channelId') channelId: string) {
+    return this.channelsService.remove(+channelId);
   }
 
   @Delete(':id/participants/:userId')

@@ -13,7 +13,7 @@ import {
 import { Permission } from '@/common/constants/permissions.enum';
 import { RequiredPermissions } from '@/common/decorators/required-permissions.decorator';
 import { MessagePaginationDto } from '@/common/dto/pagination.dto';
-import { RolesGuard, ServerContext } from '@/common/guards/roles.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
 import {
   CurrentUser,
   type RequestUser,
@@ -47,27 +47,29 @@ export class MessagesController {
     );
   }
 
-  @Get(':id')
+  @Get(':messageId')
   @RequiredPermissions(Permission.VIEW_CHANNELS)
-  findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(+id);
+  findOne(@Param('messageId') messageId: string) {
+    return this.messagesService.findOne(+messageId);
   }
 
-  @Patch(':id')
-  @ServerContext('messageId')
+  @Patch(':messageId')
   @RequiredPermissions(Permission.EDIT_MESSAGES)
   update(
-    @Param('id') id: string,
+    @Param('messageId') messageId: string,
     @Body() updateMessageDto: UpdateMessageDto,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.messagesService.update(+id, updateMessageDto, user.id);
+    return this.messagesService.update(+messageId, updateMessageDto, user.id);
   }
 
-  @Delete(':id')
+  @Delete(':messageId')
   // Users can delete their own messages
   // Service layer enforces ownership check
-  remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
-    return this.messagesService.remove(+id, user.id);
+  remove(
+    @Param('messageId') messageId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.messagesService.remove(+messageId, user.id);
   }
 }

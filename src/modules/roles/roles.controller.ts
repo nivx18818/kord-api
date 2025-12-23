@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { ServerContext } from '@/common/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -32,19 +31,21 @@ export class RolesController {
     return this.rolesService.findAll(serverId ? +serverId : undefined);
   }
 
-  @Get(':id')
-  @ServerContext('roleId')
-  findOne(@Param('id') id: string) {
-    return this.rolesService.findOne(+id);
+  @Get(':roleId')
+  findOne(@Param('roleId') roleId: string) {
+    return this.rolesService.findOne(+roleId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.rolesService.update(+id, updateRoleDto);
+  @Patch(':roleId')
+  update(
+    @Param('roleId') roleId: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+  ) {
+    return this.rolesService.update(+roleId, updateRoleDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rolesService.remove(+id);
+  @Delete(':roleId')
+  remove(@Param('roleId') roleId: string) {
+    return this.rolesService.remove(+roleId);
   }
 }
