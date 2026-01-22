@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { nanoid } from 'nanoid';
 
 import {
   EmailAlreadyExistsException,
@@ -72,7 +73,6 @@ export class AuthService {
       throw new KordUnauthorizedException('Invalid credentials');
     }
 
-    // Generate tokens
     return this.generateTokens(user.id, user.email, user.username);
   }
 
@@ -86,7 +86,7 @@ export class AuthService {
         },
       });
 
-      // Optional: Clean up expired tokens for this user
+      // Clean up expired tokens for this user
       await this.prisma.refreshToken.deleteMany({
         where: {
           expiresAt: {
@@ -171,10 +171,8 @@ export class AuthService {
       throw new UsernameAlreadyExistsException(registerDto.username);
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-    // Create user with profile
     try {
       const user = await this.prisma.user.create({
         select: {
@@ -191,7 +189,6 @@ export class AuthService {
         },
       });
 
-      // Generate tokens
       return this.generateTokens(user.id, user.email, user.username);
     } catch (error) {
       if (
@@ -252,14 +249,13 @@ export class AuthService {
   ): Promise<AuthResponseDto> {
     const payload = { email, sub: userId, username };
 
-    // Generate access token
     const accessToken = this.jwtService.sign(payload);
 
     // Generate refresh token with unique jti to avoid collisions
     const refreshToken = this.jwtService.sign(
       {
         ...payload,
-        jti: `${userId}-${Date.now()}-${Math.random()}`,
+        jti: nanoid(),
       },
       {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
