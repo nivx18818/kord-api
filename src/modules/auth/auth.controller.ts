@@ -21,10 +21,11 @@ import {
 } from '@/common/constants/cookie-config';
 import { RefreshTokenInvalidException } from '@/common/exceptions/kord.exceptions';
 
-import type { RequestUser } from './decorators/current-user.decorator';
-
 import { AuthService } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type RequestUser,
+} from './decorators/current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
