@@ -72,26 +72,38 @@ export class ChannelsController {
     return this.channelsService.remove(+channelId);
   }
 
-  @Delete(':id/participants/:userId')
-  removeParticipant(@Param('id') id: string, @Param('userId') userId: string) {
-    return this.channelsService.removeParticipant(+id, +userId);
+  @Delete(':channelId/participants/:userId')
+  removeParticipant(
+    @Param('channelId') channelId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.channelsService.removeParticipant(+channelId, +userId);
   }
 
-  @Post(':id/participants')
+  @Post(':channelId/participants')
   addParticipant(
-    @Param('id') id: string,
+    @Param('channelId') channelId: string,
     @Body() addParticipantDto: AddParticipantDto,
   ) {
-    return this.channelsService.addParticipant(+id, addParticipantDto.userId);
+    return this.channelsService.addParticipant(
+      +channelId,
+      addParticipantDto.userId,
+    );
   }
 
-  @Post(':id/block')
-  blockDM(@Param('id') id: string, @Body() blockDMDto: BlockDMDto) {
-    return this.channelsService.blockDM(blockDMDto.userId, +id);
+  @Post(':channelId/block')
+  blockDM(
+    @Param('channelId') channelId: string,
+    @Body() blockDMDto: BlockDMDto,
+  ) {
+    return this.channelsService.blockDM(blockDMDto.userId, +channelId);
   }
 
-  @Delete(':id/block/:userId')
-  unblockDM(@Param('id') id: string, @Param('userId') userId: string) {
-    return this.channelsService.unblockDM(+userId, +id);
+  @Delete(':channelId/block/:userId')
+  unblockDM(
+    @Param('channelId') channelId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.channelsService.unblockDM(+userId, +channelId);
   }
 }
