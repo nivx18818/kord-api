@@ -19,6 +19,14 @@ import type { AuthenticatedSocket } from './types/socket-data.type';
 
 import { extractTokenFromSocket } from './utils/ws-cookie-extractor';
 
+interface JoinChannelPayload {
+  channelId: number;
+}
+
+interface LeaveChannelPayload {
+  channelId: number;
+}
+
 interface MessageCreatedPayload {
   channelId: number;
   message: unknown;
@@ -111,7 +119,7 @@ export class MessagesGateway
 
   @SubscribeMessage('join-channel')
   handleJoinChannel(
-    @MessageBody() data: { channelId: number },
+    @MessageBody() data: JoinChannelPayload,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     // Access authenticated user from socket data
@@ -131,7 +139,7 @@ export class MessagesGateway
 
   @SubscribeMessage('leave-channel')
   handleLeaveChannel(
-    @MessageBody() data: { channelId: number },
+    @MessageBody() data: LeaveChannelPayload,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     const user = client.data.user;
