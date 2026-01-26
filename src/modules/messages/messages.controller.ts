@@ -54,7 +54,6 @@ export class MessagesController {
   }
 
   @Patch(':messageId')
-  @RequiredPermissions(Permission.EDIT_MESSAGES)
   update(
     @Param('messageId') messageId: string,
     @Body() updateMessageDto: UpdateMessageDto,
@@ -64,8 +63,6 @@ export class MessagesController {
   }
 
   @Delete(':messageId')
-  // Users can delete their own messages
-  // Service layer enforces ownership check
   remove(
     @Param('messageId') messageId: string,
     @CurrentUser() user: RequestUser,
