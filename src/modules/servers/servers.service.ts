@@ -3,6 +3,10 @@ import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library'
 import { nanoid } from 'nanoid';
 
 import {
+  DEFAULT_ADMIN_PERMISSIONS,
+  DEFAULT_MEMBER_PERMISSIONS,
+} from '@/common/constants/default-permissions';
+import {
   buildOffsetPaginatedResponse,
   OffsetPaginationDto,
 } from '@/common/dto/pagination.dto';
@@ -49,24 +53,7 @@ export class ServersService {
         const adminRole = await tx.role.create({
           data: {
             name: 'Admin',
-            permissions: JSON.stringify({
-              addReactions: true,
-              banMembers: true,
-              connectVoice: true,
-              deafenMembers: true,
-              deleteMessages: true,
-              editMessages: true,
-              kickMembers: true,
-              manageChannels: true,
-              manageInvites: true,
-              manageReactions: true,
-              manageRoles: true,
-              manageServers: true,
-              muteMembers: true,
-              sendMessages: true,
-              speakVoice: true,
-              viewChannels: true,
-            }),
+            permissions: JSON.stringify(DEFAULT_ADMIN_PERMISSIONS),
             serverId: server.id,
           },
         });
@@ -311,13 +298,7 @@ export class ServersService {
         memberRole = await tx.role.create({
           data: {
             name: 'Member',
-            permissions: JSON.stringify({
-              addReactions: true,
-              connectVoice: true,
-              sendMessages: true,
-              speakVoice: true,
-              viewChannels: true,
-            }),
+            permissions: JSON.stringify(DEFAULT_MEMBER_PERMISSIONS),
             serverId: invite.serverId,
           },
         });
