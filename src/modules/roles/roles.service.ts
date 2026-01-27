@@ -6,6 +6,9 @@ import {
   PermissionsMap,
 } from '@/common/constants/permissions.enum';
 import {
+  KordForbiddenException,
+  MissingPermissionsException,
+  NotMemberOfServerException,
   RoleNotFoundException,
   ServerNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
@@ -171,11 +174,27 @@ export class RolesService {
     }
   }
 
-  async checkUserPermissions(
+  /**
+   * Checks if user has required permissions in a server
+   */
+  async checkServerPermissions(
     userId: number,
     serverId: number,
     requiredPermissions: Permission[],
   ): Promise<boolean> {
+    // First check if the server exists to differentiate 404 from 403
+    const serverExists = await this.prisma.server.findUnique({
+      select: { id: true },
+      where: { id: serverId },
+    });
+
+    // If server doesn't exist, allow the request through
+    // The controller/service layer will throw proper NotFoundException
+    if (!serverExists) {
+      return true;
+    }
+
+    // Get user's membership with role
     const membership = await this.prisma.membership.findUnique({
       include: {
         role: true,
@@ -188,14 +207,31 @@ export class RolesService {
       },
     });
 
-    if (!membership || !membership.role) {
-      return false;
+    if (!membership) {
+      throw new NotMemberOfServerException();
     }
 
-    const userPermissions = membership.role.permissions as PermissionsMap;
+    // If no role is assigned, user has no permissions
+    if (!membership.role) {
+      throw new KordForbiddenException('User has no role assigned');
+    }
 
-    return requiredPermissions.every(
+    // Parse permissions from role JSON
+    const permissionsRaw = membership.role.permissions;
+    const userPermissions: PermissionsMap =
+      typeof permissionsRaw === 'string'
+        ? (JSON.parse(permissionsRaw) as PermissionsMap)
+        : (permissionsRaw as PermissionsMap);
+
+    // Check if user has all required permissions
+    const hasAllPermissions = requiredPermissions.every(
       (permission) => userPermissions[permission] === true,
     );
+
+    if (!hasAllPermissions) {
+      throw new MissingPermissionsException(requiredPermissions);
+    }
+
+    return true;
   }
 }

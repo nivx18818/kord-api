@@ -6,11 +6,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Permission } from '@/common/constants/permissions.enum';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { RolesService } from '@/modules/roles/roles.service';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
   let prisma: PrismaService;
   let reflector: Reflector;
+  let rolesService: RolesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,18 +34,18 @@ describe('RolesGuard', () => {
             channelParticipant: {
               findUnique: jest.fn(),
             },
-            membership: {
-              findUnique: jest.fn(),
-            },
             message: {
               findUnique: jest.fn(),
             },
             role: {
               findUnique: jest.fn(),
             },
-            server: {
-              findUnique: jest.fn(),
-            },
+          },
+        },
+        {
+          provide: RolesService,
+          useValue: {
+            checkServerPermissions: jest.fn(),
           },
         },
       ],
@@ -52,6 +54,7 @@ describe('RolesGuard', () => {
     guard = module.get<RolesGuard>(RolesGuard);
     prisma = module.get<PrismaService>(PrismaService);
     reflector = module.get<Reflector>(Reflector);
+    rolesService = module.get<RolesService>(RolesService);
   });
 
   it('should be defined', () => {
@@ -93,29 +96,16 @@ describe('RolesGuard', () => {
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_SERVERS]);
 
-      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
-        id: 1,
-      } as never);
-
-      jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
-        createdAt: new Date(),
-        role: {
-          id: 1,
-          name: 'Admin',
-          permissions: {
-            manageServers: true,
-          },
-          serverId: 1,
-        },
-        roleId: 1,
-        serverId: 1,
-        updatedAt: new Date(),
-        userId: 1,
-      } as never);
+      jest
+        .spyOn(rolesService, 'checkServerPermissions')
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
+      expect(rolesService.checkServerPermissions).toHaveBeenCalledWith(1, 1, [
+        Permission.MANAGE_SERVERS,
+      ]);
     });
 
     it('should throw ForbiddenException when user lacks required permissions', async () => {
@@ -128,25 +118,9 @@ describe('RolesGuard', () => {
         .spyOn(reflector, 'getAllAndOverride')
         .mockReturnValue([Permission.MANAGE_SERVERS]);
 
-      jest.spyOn(prisma.server, 'findUnique').mockResolvedValue({
-        id: 1,
-      } as never);
-
-      jest.spyOn(prisma.membership, 'findUnique').mockResolvedValue({
-        createdAt: new Date(),
-        role: {
-          id: 1,
-          name: 'Member',
-          permissions: {
-            manageServers: false,
-          },
-          serverId: 1,
-        },
-        roleId: 1,
-        serverId: 1,
-        updatedAt: new Date(),
-        userId: 1,
-      } as never);
+      jest
+        .spyOn(rolesService, 'checkServerPermissions')
+        .mockRejectedValue(new ForbiddenException('Missing permissions'));
 
       await expect(guard.canActivate(mockContext)).rejects.toThrow(
         ForbiddenException,
