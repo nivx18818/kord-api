@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsPositive } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsPositive } from 'class-validator';
 
 export class CreateMembershipDto {
   @IsInt()
@@ -10,7 +10,8 @@ export class CreateMembershipDto {
   serverId: number;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
-  roleId?: number;
+  @IsArray()
+  @IsInt({ each: true })
+  @IsPositive({ each: true })
+  roleIds?: number[];
 }
