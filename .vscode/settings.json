@@ -10,6 +10,7 @@
     "*.resolver.ts": "nest",
     "*.gateway.ts": "nest",
     "*.decorator.ts": "nest-decorator",
+    "prisma.config.ts": "prisma",
     "*.bru": "bruno",
     "*.plantuml": "drawio"
   },

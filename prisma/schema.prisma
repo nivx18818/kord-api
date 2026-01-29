@@ -94,11 +94,11 @@ model Channel {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  serverId       Int                  @map("server_id")
-  server         Server               @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  messages       Message[]
-  channelBlocks  ChannelBlock[]
-  participants   ChannelParticipant[]
+  serverId      Int                  @map("server_id")
+  server        Server               @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  channelBlocks ChannelBlock[]
+  participants  ChannelParticipant[]
 
   @@index([isDM, createdAt, serverId])
   @@map("channels")
@@ -109,9 +109,10 @@ model Role {
   name        String
   permissions Json // e.g., {"manageChannels": true, "kickUsers": false}
 
-  serverId Int          @map("server_id")
-  server   Server       @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  users    Membership[]
+  serverId Int    @map("server_id")
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  memberships MembershipRole[]
 
   @@index([serverId])
   @@map("roles")
@@ -125,13 +126,13 @@ model Message {
   updatedAt DateTime? @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  userId          Int             @map("user_id")
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channelId       Int             @map("channel_id")
-  channel         Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  parentMessageId Int?            @map("parent_message_id")
-  parentMessage   Message?        @relation("Thread", fields: [parentMessageId], references: [id], onDelete: SetNull)
-  replies         Message[]       @relation("Thread")
+  userId          Int          @map("user_id")
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId       Int          @map("channel_id")
+  channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parentMessageId Int?         @map("parent_message_id")
+  parentMessage   Message?     @relation("Thread", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  replies         Message[]    @relation("Thread")
   attachments     Attachment[]
   reacts          Reaction[]
 
@@ -163,11 +164,10 @@ model Membership {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   serverId Int    @map("server_id")
   server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  roleId   Int?   @map("role_id")
-  role     Role?  @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  roles MembershipRole[]
 
   @@id([userId, serverId])
-  @@index([roleId])
   @@map("memberships")
 }
 
@@ -204,7 +204,7 @@ model Invite {
 }
 
 model UserMute {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   reason    String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -249,6 +249,23 @@ model ChannelParticipant {
   @@index([channelId])
   @@index([userId])
   @@map("channel_participants")
+}
+
+model MembershipRole {
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId     Int        @map("user_id")
+  serverId   Int        @map("server_id")
+  membership Membership @relation(fields: [userId, serverId], references: [userId, serverId], onDelete: Cascade)
+
+  roleId Int  @map("role_id")
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, serverId, roleId])
+  @@index([userId, serverId])
+  @@index([roleId])
+  @@map("membership_roles")
 }
 
 enum ChannelType {
