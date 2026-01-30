@@ -10,6 +10,7 @@ import {
   MissingPermissionsException,
   NotMemberOfServerException,
   RoleNotFoundException,
+  RolesNotFoundException,
   ServerNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
 
@@ -66,20 +67,18 @@ export class RolesService {
     return role;
   }
 
-  async getUserRole(userId: number, serverId: number) {
-    const membership = await this.prisma.membership.findUnique({
+  async getUserRoles(userId: number, serverId: number) {
+    const membershipRoles = await this.prisma.membershipRole.findMany({
       include: {
         role: true,
       },
       where: {
-        userId_serverId: {
-          serverId,
-          userId,
-        },
+        serverId,
+        userId,
       },
     });
 
-    return membership?.role || null;
+    return membershipRoles.map((mr) => mr.role);
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
@@ -116,66 +115,92 @@ export class RolesService {
     }
   }
 
-  async removeRoleFromUser(userId: number, serverId: number) {
+  async removeAllRolesFromUser(userId: number, serverId: number) {
+    return await this.prisma.membershipRole.deleteMany({
+      where: {
+        serverId,
+        userId,
+      },
+    });
+  }
+
+  async removeRolesFromUser(
+    userId: number,
+    serverId: number,
+    roleIds: number[],
+  ) {
     try {
-      return await this.prisma.membership.update({
-        include: {
-          role: true,
-          server: true,
-          user: true,
-        },
+      await this.prisma.membershipRole.deleteMany({
         where: {
-          userId_serverId: {
-            serverId,
-            userId,
-          },
-        },
-        data: {
-          roleId: null,
+          roleId: { in: roleIds },
+          serverId,
+          userId,
         },
       });
+
+      return this.getUserRoles(userId, serverId);
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new RoleNotFoundException(userId);
+        throw new RolesNotFoundException(roleIds);
       }
       throw error;
     }
   }
 
-  async assignRoleToUser(userId: number, serverId: number, roleId: number) {
-    try {
-      return await this.prisma.membership.update({
-        include: {
-          role: true,
-          server: true,
-          user: true,
+  async assignRoleToUser(userId: number, serverId: number, roleIds: number[]) {
+    const membership = await this.prisma.membership.findUnique({
+      where: {
+        userId_serverId: {
+          serverId,
+          userId,
         },
+      },
+    });
+
+    if (!membership) {
+      throw new NotMemberOfServerException();
+    }
+
+    const roles = await this.prisma.role.findMany({
+      where: {
+        id: { in: roleIds },
+        serverId,
+      },
+    });
+
+    if (roles.length !== roleIds.length) {
+      throw new RolesNotFoundException(roleIds);
+    }
+
+    const createOperations = roleIds.map((roleId) =>
+      this.prisma.membershipRole.upsert({
+        create: {
+          roleId,
+          serverId,
+          userId,
+        },
+        update: {},
         where: {
-          userId_serverId: {
+          userId_serverId_roleId: {
+            roleId,
             serverId,
             userId,
           },
         },
-        data: {
-          roleId,
-        },
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new RoleNotFoundException(roleId);
-      }
-      throw error;
-    }
+      }),
+    );
+
+    await this.prisma.$transaction(createOperations);
+
+    return this.getUserRoles(userId, serverId);
   }
 
   /**
    * Checks if user has required permissions in a server
+   * Aggregates permissions across all assigned roles
    */
   async checkServerPermissions(
     userId: number,
@@ -196,9 +221,6 @@ export class RolesService {
 
     // Get user's membership with role
     const membership = await this.prisma.membership.findUnique({
-      include: {
-        role: true,
-      },
       where: {
         userId_serverId: {
           serverId,
@@ -211,21 +233,38 @@ export class RolesService {
       throw new NotMemberOfServerException();
     }
 
-    // If no role is assigned, user has no permissions
-    if (!membership.role) {
-      throw new KordForbiddenException('User has no role assigned');
+    const membershipRoles = await this.prisma.membershipRole.findMany({
+      include: {
+        role: true,
+      },
+      where: {
+        serverId,
+        userId,
+      },
+    });
+
+    if (membershipRoles.length === 0) {
+      throw new KordForbiddenException('User has no roles assigned');
     }
 
-    // Parse permissions from role JSON
-    const permissionsRaw = membership.role.permissions;
-    const userPermissions: PermissionsMap =
-      typeof permissionsRaw === 'string'
-        ? (JSON.parse(permissionsRaw) as PermissionsMap)
-        : (permissionsRaw as PermissionsMap);
+    const aggregatedPermissions: PermissionsMap = {};
+
+    for (const mr of membershipRoles) {
+      const rolePermissions: PermissionsMap =
+        typeof mr.role.permissions === 'string'
+          ? (JSON.parse(mr.role.permissions) as PermissionsMap)
+          : (mr.role.permissions as PermissionsMap);
+
+      Object.entries(rolePermissions).forEach(([key, value]) => {
+        if (value === true) {
+          aggregatedPermissions[key as Permission] = true;
+        }
+      });
+    }
 
     // Check if user has all required permissions
     const hasAllPermissions = requiredPermissions.every(
-      (permission) => userPermissions[permission] === true,
+      (permission) => aggregatedPermissions[permission] === true,
     );
 
     if (!hasAllPermissions) {

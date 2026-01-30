@@ -303,6 +303,15 @@ export class RoleNotFoundException extends NotFoundException {
   }
 }
 
+export class RolesNotFoundException extends NotFoundException {
+  constructor(roleIds: number[]) {
+    super({
+      code: ErrorCode.ROLES_NOT_FOUND,
+      message: `${getErrorMessage(ErrorCode.ROLES_NOT_FOUND)}: ${roleIds.join(', ')}`,
+    });
+  }
+}
+
 export class ProfileNotFoundException extends NotFoundException {
   constructor(userId: number) {
     super({

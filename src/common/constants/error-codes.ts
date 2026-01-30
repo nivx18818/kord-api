@@ -42,6 +42,7 @@ export enum ErrorCode {
   ATTACHMENT_NOT_FOUND = 40407,
   MEMBERSHIP_NOT_FOUND = 40408,
   INVITE_NOT_FOUND = 40409,
+  ROLES_NOT_FOUND = 40410,
   // 409 - Conflict
   CONFLICT = 40900,
   EMAIL_ALREADY_EXISTS = 40901,
@@ -100,6 +101,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.ATTACHMENT_NOT_FOUND]: 'Attachment not found',
   [ErrorCode.MEMBERSHIP_NOT_FOUND]: 'Membership not found',
   [ErrorCode.INVITE_NOT_FOUND]: 'Invite not found',
+  [ErrorCode.ROLES_NOT_FOUND]: 'One or more roles not found',
   // 409 - Conflict
   [ErrorCode.CONFLICT]: 'The resource is in a conflicting state',
   [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already registered',
