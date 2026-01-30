@@ -19,13 +19,41 @@ export class MembershipsService {
 
   async create(createMembershipDto: CreateMembershipDto) {
     try {
-      return await this.prisma.membership.create({
-        include: {
-          role: true,
-          server: true,
-          user: true,
-        },
-        data: createMembershipDto,
+      return await this.prisma.$transaction(async (tx) => {
+        const membership = await tx.membership.create({
+          include: {
+            roles: {
+              include: {
+                role: true,
+              },
+            },
+            server: true,
+            user: true,
+          },
+          data: {
+            serverId: createMembershipDto.serverId,
+            userId: createMembershipDto.userId,
+          },
+        });
+
+        if (
+          createMembershipDto.roleIds &&
+          createMembershipDto.roleIds.length > 0
+        ) {
+          await Promise.all(
+            createMembershipDto.roleIds.map((roleId) =>
+              tx.membershipRole.create({
+                data: {
+                  roleId,
+                  serverId: createMembershipDto.serverId,
+                  userId: createMembershipDto.userId,
+                },
+              }),
+            ),
+          );
+        }
+
+        return membership;
       });
     } catch (error) {
       if (
@@ -54,7 +82,11 @@ export class MembershipsService {
   async findAll() {
     return this.prisma.membership.findMany({
       include: {
-        role: true,
+        roles: {
+          include: {
+            role: true,
+          },
+        },
         server: true,
         user: true,
       },
@@ -64,7 +96,11 @@ export class MembershipsService {
   async findOne(userId: number, serverId: number) {
     return this.prisma.membership.findUnique({
       include: {
-        role: true,
+        roles: {
+          include: {
+            role: true,
+          },
+        },
         server: true,
         user: true,
       },
@@ -83,19 +119,50 @@ export class MembershipsService {
     updateMembershipDto: UpdateMembershipDto,
   ) {
     try {
-      return await this.prisma.membership.update({
-        include: {
-          role: true,
-          server: true,
-          user: true,
-        },
-        where: {
-          userId_serverId: {
-            serverId,
-            userId,
+      return await this.prisma.$transaction(async (tx) => {
+        const membership = await tx.membership.update({
+          include: {
+            roles: {
+              include: {
+                role: true,
+              },
+            },
+            server: true,
+            user: true,
           },
-        },
-        data: updateMembershipDto,
+          where: {
+            userId_serverId: {
+              serverId,
+              userId,
+            },
+          },
+          data: {},
+        });
+
+        if (updateMembershipDto.roleIds) {
+          await tx.membershipRole.deleteMany({
+            where: {
+              serverId,
+              userId,
+            },
+          });
+
+          if (updateMembershipDto.roleIds.length > 0) {
+            await Promise.all(
+              updateMembershipDto.roleIds.map((roleId) =>
+                tx.membershipRole.create({
+                  data: {
+                    roleId,
+                    serverId,
+                    userId,
+                  },
+                }),
+              ),
+            );
+          }
+        }
+
+        return membership;
       });
     } catch (error) {
       if (
