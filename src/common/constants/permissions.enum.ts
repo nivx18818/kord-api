@@ -1,20 +1,26 @@
+/* eslint-disable perfectionist/sort-enums */
 export enum Permission {
   // Reaction Permissions
   ADD_REACTIONS = 'addReactions',
 
   // Member Management
   BAN_MEMBERS = 'banMembers',
+  KICK_MEMBERS = 'kickMembers',
 
   // Voice Permissions
   CONNECT_VOICE = 'connectVoice',
   DEAFEN_MEMBERS = 'deafenMembers',
+  MUTE_MEMBERS = 'muteMembers',
 
   // Channel Permissions
   DELETE_MESSAGES = 'deleteMessages',
   EDIT_MESSAGES = 'editMessages',
+  SEND_MESSAGES = 'sendMessages',
+  SPEAK_VOICE = 'speakVoice',
+  VIEW_CHANNELS = 'viewChannels',
 
-  // Member Management
-  KICK_MEMBERS = 'kickMembers',
+  // Server Permissions
+  VIEW_ROLES = 'viewRoles',
 
   // Server Management
   MANAGE_CHANNELS = 'manageChannels',
@@ -22,14 +28,6 @@ export enum Permission {
   MANAGE_REACTIONS = 'manageReactions',
   MANAGE_ROLES = 'manageRoles',
   MANAGE_SERVERS = 'manageServers',
-
-  // Voice Permissions
-  MUTE_MEMBERS = 'muteMembers',
-
-  // Channel Permissions
-  SEND_MESSAGES = 'sendMessages',
-  SPEAK_VOICE = 'speakVoice',
-  VIEW_CHANNELS = 'viewChannels',
 }
 
 export type PermissionsMap = Partial<Record<Permission, boolean>>;

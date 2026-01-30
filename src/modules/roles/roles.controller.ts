@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { Permission } from '@/common/constants/permissions.enum';
+import { RequiredPermissions } from '@/common/decorators/required-permissions.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -34,6 +36,15 @@ export class RolesController {
   @Get(':roleId')
   findOne(@Param('roleId') roleId: string) {
     return this.rolesService.findOne(+roleId);
+  }
+
+  @Get('users/:userId/servers/:serverId')
+  @RequiredPermissions(Permission.VIEW_ROLES)
+  getUserRoles(
+    @Param('userId') userId: string,
+    @Param('serverId') serverId: string,
+  ) {
+    return this.rolesService.getUserRoles(+userId, +serverId);
   }
 
   @Patch(':roleId')

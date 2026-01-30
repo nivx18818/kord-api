@@ -17,6 +17,7 @@ export const DEFAULT_ADMIN_PERMISSIONS: PermissionsMap = {
   [Permission.SEND_MESSAGES]: true,
   [Permission.SPEAK_VOICE]: true,
   [Permission.VIEW_CHANNELS]: true,
+  [Permission.VIEW_ROLES]: true,
 };
 
 export const DEFAULT_MEMBER_PERMISSIONS: PermissionsMap = {
@@ -25,4 +26,5 @@ export const DEFAULT_MEMBER_PERMISSIONS: PermissionsMap = {
   [Permission.SEND_MESSAGES]: true,
   [Permission.SPEAK_VOICE]: true,
   [Permission.VIEW_CHANNELS]: true,
+  [Permission.VIEW_ROLES]: true,
 };
