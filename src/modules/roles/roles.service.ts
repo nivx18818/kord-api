@@ -150,7 +150,7 @@ export class RolesService {
     }
   }
 
-  async assignRoleToUser(userId: number, serverId: number, roleIds: number[]) {
+  async assignRolesToUser(userId: number, serverId: number, roleIds: number[]) {
     const membership = await this.prisma.membership.findUnique({
       where: {
         userId_serverId: {
