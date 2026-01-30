@@ -22,6 +22,8 @@ import {
 } from '@/modules/auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
+import { AssignRolesDto } from '../roles/dto/assign-roles.dto';
+import { RemoveRolesDto } from '../roles/dto/remove-roles.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { CreateServerDto } from './dto/create-server.dto';
 import { RedeemInviteDto } from './dto/redeem-invite.dto';
@@ -106,24 +108,42 @@ export class ServersController {
     return this.serversService.remove(+serverId);
   }
 
-  @Delete(':serverId/members/:userId/roles')
+  @Delete(':serverId/members/:userId/roles/all')
   @RequiredPermissions(Permission.MANAGE_ROLES)
-  removeRole(
+  removeAllRoles(
     @Param('serverId') serverId: string,
     @Param('userId') userId: string,
   ) {
-    return this.serversService.removeRole(+serverId, +userId);
+    return this.serversService.removeAllRoles(+serverId, +userId);
   }
 
-  @Post(':serverId/members/:userId/roles/:roleId')
-  @HttpCode(HttpStatus.OK)
+  @Delete(':serverId/members/:userId/roles')
   @RequiredPermissions(Permission.MANAGE_ROLES)
-  assignRole(
+  removeRoles(
     @Param('serverId') serverId: string,
     @Param('userId') userId: string,
-    @Param('roleId') roleId: string,
+    @Body() removeRolesDto: RemoveRolesDto,
   ) {
-    return this.serversService.assignRole(+serverId, +userId, +roleId);
+    return this.serversService.removeRoles(
+      +serverId,
+      +userId,
+      removeRolesDto.roleIds,
+    );
+  }
+
+  @Post(':serverId/members/:userId/roles')
+  @HttpCode(HttpStatus.OK)
+  @RequiredPermissions(Permission.MANAGE_ROLES)
+  assignRoles(
+    @Param('serverId') serverId: string,
+    @Param('userId') userId: string,
+    @Body() assignRolesDto: AssignRolesDto,
+  ) {
+    return this.serversService.assignRoles(
+      +serverId,
+      +userId,
+      assignRolesDto.roleIds,
+    );
   }
 
   @Post('invites/:code/redeem')
