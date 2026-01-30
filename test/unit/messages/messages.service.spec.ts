@@ -3,7 +3,7 @@
 
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 import {
   createMockMessageWithRelations,
   createMockPrismaService,

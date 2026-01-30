@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import {
   AlreadyMemberOfServerException,

@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Message } from 'generated/prisma';
-import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import {
   buildCursorPaginatedResponse,

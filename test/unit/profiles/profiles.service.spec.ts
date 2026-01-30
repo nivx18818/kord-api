@@ -1,6 +1,6 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 import { createMockPrismaService, mockProfile } from 'test/utils';
 
 import { PrismaService } from '@/modules/prisma/prisma.service';

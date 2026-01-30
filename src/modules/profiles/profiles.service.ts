@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import { ProfileNotFoundException } from '@/common/exceptions/kord.exceptions';
 
