@@ -61,6 +61,13 @@ export class ServersService {
         // 3. Add creator as admin member
         await tx.membership.create({
           data: {
+            serverId: server.id,
+            userId: creatorId,
+          },
+        });
+
+        await tx.membershipRole.create({
+          data: {
             roleId: adminRole.id,
             serverId: server.id,
             userId: creatorId,
@@ -239,20 +246,19 @@ export class ServersService {
     }
   }
 
-  async removeRole(serverId: number, userId: number) {
-    // Verify server exists
-    await this.findOne(serverId);
-
-    // Delegate to RolesService
-    return this.rolesService.removeRoleFromUser(userId, serverId);
+  async removeAllRoles(serverId: number, userId: number) {
+    await this.findOne(serverId); // Verify server exists
+    return this.rolesService.removeAllRolesFromUser(serverId, userId);
   }
 
-  async assignRole(serverId: number, userId: number, roleId: number) {
-    // Verify server exists
-    await this.findOne(serverId);
+  async removeRoles(serverId: number, userId: number, roleIds: number[]) {
+    await this.findOne(serverId); // Verify server exists
+    return this.rolesService.removeRolesFromUser(serverId, userId, roleIds);
+  }
 
-    // Delegate to RolesService
-    return this.rolesService.assignRoleToUser(userId, serverId, roleId);
+  async assignRoles(serverId: number, userId: number, roleIds: number[]) {
+    await this.findOne(serverId); // Verify server exists
+    return this.rolesService.assignRolesToUser(serverId, userId, roleIds);
   }
 
   async redeemInvite(code: string, userId: number) {
@@ -305,9 +311,13 @@ export class ServersService {
       }
 
       // Create membership with the Member role
-      return await tx.membership.create({
+      const membership = await tx.membership.create({
         include: {
-          role: true,
+          roles: {
+            include: {
+              role: true,
+            },
+          },
           server: true,
           user: {
             select: {
@@ -319,11 +329,20 @@ export class ServersService {
           },
         },
         data: {
+          serverId: invite.serverId,
+          userId,
+        },
+      });
+
+      await tx.membershipRole.create({
+        data: {
           roleId: memberRole.id,
           serverId: invite.serverId,
           userId,
         },
       });
+
+      return membership;
     });
   }
 }
