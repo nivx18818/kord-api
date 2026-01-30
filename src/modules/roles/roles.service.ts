@@ -67,7 +67,7 @@ export class RolesService {
     return role;
   }
 
-  async getUserRoles(userId: number, serverId: number) {
+  async getUserRoles(serverId: number, userId: number) {
     const membershipRoles = await this.prisma.membershipRole.findMany({
       include: {
         role: true,
@@ -115,7 +115,7 @@ export class RolesService {
     }
   }
 
-  async removeAllRolesFromUser(userId: number, serverId: number) {
+  async removeAllRolesFromUser(serverId: number, userId: number) {
     return await this.prisma.membershipRole.deleteMany({
       where: {
         serverId,
@@ -125,8 +125,8 @@ export class RolesService {
   }
 
   async removeRolesFromUser(
-    userId: number,
     serverId: number,
+    userId: number,
     roleIds: number[],
   ) {
     try {
@@ -150,7 +150,7 @@ export class RolesService {
     }
   }
 
-  async assignRolesToUser(userId: number, serverId: number, roleIds: number[]) {
+  async assignRolesToUser(serverId: number, userId: number, roleIds: number[]) {
     const membership = await this.prisma.membership.findUnique({
       where: {
         userId_serverId: {
@@ -203,8 +203,8 @@ export class RolesService {
    * Aggregates permissions across all assigned roles
    */
   async checkServerPermissions(
-    userId: number,
     serverId: number,
+    userId: number,
     requiredPermissions: Permission[],
   ): Promise<boolean> {
     // First check if the server exists to differentiate 404 from 403

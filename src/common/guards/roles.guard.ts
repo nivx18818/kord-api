@@ -114,8 +114,8 @@ export class RolesGuard implements CanActivate {
 
     // Check user membership and permissions in the server
     return this.rolesService.checkServerPermissions(
-      user.id,
       resolution.serverId,
+      user.id,
       requiredPermissions,
     );
   }
