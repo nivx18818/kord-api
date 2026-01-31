@@ -2,7 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
-import { PrismaClient } from 'generated/prisma';
+import { PrismaClient } from 'generated/prisma/client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
 import { AuthService } from '@/modules/auth/auth.service';
