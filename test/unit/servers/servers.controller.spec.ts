@@ -18,6 +18,7 @@ describe('ServersController', () => {
   let service: ServersService;
 
   const mockServersService = {
+    assignRoles: jest.fn(),
     create: jest.fn(),
     createInvite: jest.fn(),
     findAll: jest.fn(),
@@ -26,7 +27,9 @@ describe('ServersController', () => {
     getServerInvites: jest.fn(),
     redeemInvite: jest.fn(),
     remove: jest.fn(),
+    removeAllRoles: jest.fn(),
     removeInvite: jest.fn(),
+    removeRoles: jest.fn(),
     update: jest.fn(),
   };
 
@@ -147,6 +150,46 @@ describe('ServersController', () => {
 
       expect(result).toEqual(mockServer);
       expect(service.remove).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('assignRoles', () => {
+    it('should assign roles to a user in a server', async () => {
+      const assignRolesDto = { roleIds: [1, 2] };
+      const roles = [
+        { id: 1, name: 'Admin' },
+        { id: 2, name: 'Moderator' },
+      ];
+      mockServersService.assignRoles.mockResolvedValue(roles);
+
+      const result = await controller.assignRoles('1', '2', assignRolesDto);
+
+      expect(result).toEqual(roles);
+      expect(service.assignRoles).toHaveBeenCalledWith(1, 2, [1, 2]);
+    });
+  });
+
+  describe('removeRoles', () => {
+    it('should remove specific roles from a user in a server', async () => {
+      const removeRolesDto = { roleIds: [1] };
+      const remainingRoles = [{ id: 2, name: 'Moderator' }];
+      mockServersService.removeRoles.mockResolvedValue(remainingRoles);
+
+      const result = await controller.removeRoles('1', '2', removeRolesDto);
+
+      expect(result).toEqual(remainingRoles);
+      expect(service.removeRoles).toHaveBeenCalledWith(1, 2, [1]);
+    });
+  });
+
+  describe('removeAllRoles', () => {
+    it('should remove all roles from a user in a server', async () => {
+      mockServersService.removeAllRoles.mockResolvedValue({ count: 2 });
+
+      const result = await controller.removeAllRoles('1', '2');
+
+      expect(result).toEqual({ count: 2 });
+      expect(service.removeAllRoles).toHaveBeenCalledWith(1, 2);
     });
   });
 });

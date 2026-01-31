@@ -12,9 +12,12 @@ describe('RolesController', () => {
   let service: RolesService;
 
   const mockRolesService = {
+    assignRolesToUser: jest.fn(),
+    checkServerPermissions: jest.fn(),
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+    getUserRoles: jest.fn(),
     remove: jest.fn(),
     update: jest.fn(),
   };
@@ -79,6 +82,18 @@ describe('RolesController', () => {
 
       expect(result).toEqual(mockRole);
       expect(service.findOne).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('getUserRoles', () => {
+    it('should return roles for a user in a server', async () => {
+      const roles = [mockRole];
+      mockRolesService.getUserRoles.mockResolvedValue(roles);
+
+      const result = await controller.getUserRoles('1', '1');
+
+      expect(result).toEqual(roles);
+      expect(service.getUserRoles).toHaveBeenCalledWith(1, 1);
     });
   });
 

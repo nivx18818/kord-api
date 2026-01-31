@@ -164,6 +164,38 @@ describe('RolesService', () => {
     });
   });
 
+  describe('assignRolesToUser', () => {
+    it('should assign multiple roles to a user', async () => {
+      const userId = 1;
+      const serverId = 1;
+      const roleIds = [1, 2];
+
+      prisma.membership.findUnique.mockResolvedValue({
+        serverId,
+        userId,
+      } as never);
+
+      prisma.role.findMany.mockResolvedValue([
+        { id: 1, name: 'Admin', serverId: 1 },
+        { id: 2, name: 'Moderator', serverId: 1 },
+      ] as never);
+
+      prisma.membershipRole.upsert.mockResolvedValue({} as never);
+      prisma.$transaction.mockImplementation((fn: unknown) => fn as never);
+
+      prisma.membershipRole.findMany.mockResolvedValue([
+        { role: { id: 1, name: 'Admin' }, roleId: 1 },
+        { role: { id: 2, name: 'Moderator' }, roleId: 2 },
+      ] as never);
+
+      const result = await service.assignRolesToUser(serverId, userId, roleIds);
+
+      expect(result).toHaveLength(2);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+  });
+
   describe('checkServerPermissions', () => {
     it('should return true when server does not exist', async () => {
       prisma.server.findUnique.mockResolvedValue(null);
@@ -187,49 +219,100 @@ describe('RolesService', () => {
     it('should throw ForbiddenException when user has no role assigned', async () => {
       prisma.server.findUnique.mockResolvedValue({ id: 1 } as never);
       prisma.membership.findUnique.mockResolvedValue({
-        role: null,
         roleId: null,
         serverId: 1,
         userId: 1,
       } as never);
 
+      prisma.membershipRole.findMany.mockResolvedValue([]);
+
       await expect(
         service.checkServerPermissions(1, 1, [Permission.MANAGE_SERVERS]),
-      ).rejects.toThrow('User has no role assigned');
+      ).rejects.toThrow('User has no roles assigned');
     });
 
     it('should throw MissingPermissionsException when user lacks required permissions', async () => {
       prisma.server.findUnique.mockResolvedValue({ id: 1 } as never);
       prisma.membership.findUnique.mockResolvedValue({
-        role: {
-          id: 1,
-          permissions: { manageServers: false },
-        },
         roleId: 1,
         serverId: 1,
         userId: 1,
       } as never);
+
+      prisma.membershipRole.findMany.mockResolvedValue([
+        {
+          role: {
+            id: 1,
+            permissions: { manageServers: false },
+          },
+        },
+      ] as never);
 
       await expect(
         service.checkServerPermissions(1, 1, [Permission.MANAGE_SERVERS]),
       ).rejects.toThrow();
     });
 
+    it('should aggregate permissions across multiple roles', async () => {
+      const userId = 1;
+      const serverId = 1;
+      const requiredPermissions = [
+        Permission.SEND_MESSAGES,
+        Permission.MANAGE_CHANNELS,
+      ];
+
+      prisma.server.findUnique.mockResolvedValue({ id: 1 } as never);
+      prisma.membership.findUnique.mockResolvedValue({
+        serverId,
+        userId,
+      } as never);
+
+      prisma.membershipRole.findMany.mockResolvedValue([
+        {
+          role: {
+            permissions: JSON.stringify({
+              [Permission.SEND_MESSAGES]: true,
+            }),
+          },
+        },
+        {
+          role: {
+            permissions: JSON.stringify({
+              [Permission.MANAGE_CHANNELS]: true,
+            }),
+          },
+        },
+      ] as never);
+
+      const result = await service.checkServerPermissions(
+        serverId,
+        userId,
+        requiredPermissions,
+      );
+
+      expect(result).toBe(true);
+    });
+
     it('should return true when user has all required permissions', async () => {
       prisma.server.findUnique.mockResolvedValue({ id: 1 } as never);
       prisma.membership.findUnique.mockResolvedValue({
-        role: {
-          id: 1,
-          permissions: {
-            kickUsers: true,
-            manageChannels: true,
-            manageServers: true,
-          },
-        },
         roleId: 1,
         serverId: 1,
         userId: 1,
       } as never);
+
+      prisma.membershipRole.findMany.mockResolvedValue([
+        {
+          role: {
+            id: 1,
+            permissions: {
+              kickUsers: true,
+              manageChannels: true,
+              manageServers: true,
+            },
+          },
+        },
+      ] as never);
 
       const result = await service.checkServerPermissions(1, 1, [
         Permission.MANAGE_SERVERS,
@@ -242,14 +325,19 @@ describe('RolesService', () => {
     it('should handle JSON string permissions', async () => {
       prisma.server.findUnique.mockResolvedValue({ id: 1 } as never);
       prisma.membership.findUnique.mockResolvedValue({
-        role: {
-          id: 1,
-          permissions: '{"manageServers": true}',
-        },
         roleId: 1,
         serverId: 1,
         userId: 1,
       } as never);
+
+      prisma.membershipRole.findMany.mockResolvedValue([
+        {
+          role: {
+            id: 1,
+            permissions: '{"manageServers": true}',
+          },
+        },
+      ] as never);
 
       const result = await service.checkServerPermissions(1, 1, [
         Permission.MANAGE_SERVERS,
