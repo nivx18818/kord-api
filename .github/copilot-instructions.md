@@ -16,7 +16,8 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
   - **Message**: JSON payload allowing rich content, belongs to Channel/User, supports threading via `parentMessageId`.
   - **Attachment**: File metadata tied to Message (URL, type, size).
   - **Role**: Server-specific role with JSON-based permissions, linked to members via UserServer.
-  - **UserServer**: Membership pivot (many-to-many) storing join timestamps, role assignment.
+  - **UserServer**: Membership pivot (many-to-many) storing join timestamps, role assignment (many-to-many with Role via MemberRole junction table).
+  - **MemberRole**: Junction table linking UserServer memberships to Roles, enabling multiple role assignment per member.
   - **ReactsMessage**: Composite key of message/user enabling emoji reactions with timestamps.
 - **Key Behaviors & Constraints**:
   - Automatic timestamps for audit trails (`createdAt`, `updatedAt`); optional `deletedAt` on Message for soft delete workflows.
@@ -25,7 +26,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
   - Indexes targeting frequent queries: message timelines, server membership, channel discovery, reaction lookup.
 - **Feature Affordances**:
   - Threaded discussions through self-referencing Message relation.
-  - Role-based access control using JSON permission sets.
+  - Role-based access control using JSON permission sets; **members can have multiple roles with effective permissions calculated as the union (OR operation) of all role permissions**.
   - Rich message composition (embeds, attachments) via JSON content and Attachment records.
   - Social presence via Profile integrations (Twitter/X, GitHub, LinkedIn, etc.).
   - Reaction tracking for engagement metrics.
@@ -51,6 +52,22 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - Update enums in `prisma/schema.prisma` and regenerate the client (`npx prisma generate`) when adding channel types/statuses.
 - Document any evolution of the permission JSON structure; consider centralizing permission keys/constants.
 - Leverage `deletedAt` and timestamp fields to support archival, auditing, and soft delete patterns.
+
+## Role Management & Permissions
+
+- **Multiple Roles**: Users can have multiple roles per server through the `MemberRole` junction table linking `UserServer` memberships to `Role` records.
+- **Permission Resolution**: Effective permissions are calculated using OR logic—if any assigned role grants a permission, the user has that permission.
+- **Role Assignment Endpoints**:
+  - `POST /servers/:serverId/members/:userId/roles` - Assign multiple roles (replaces existing)
+  - `DELETE /servers/:serverId/members/:userId/roles` - Remove specific roles
+  - `DELETE /servers/:serverId/members/:userId/roles/all` - Remove all roles
+  - `GET /roles/users/:userId/servers/:serverId` - Get user's roles and effective permissions
+- **Implementation Notes**:
+  - Always validate that role IDs belong to the specified server before assignment.
+  - Use Prisma transactions when modifying multiple role assignments.
+  - Return effective permissions (union of all role permissions) when fetching user roles.
+  - Soft-delete or cascade rules ensure role deletions clean up MemberRole records.
+  - Guards should check effective permissions by querying all of a user's roles in the server.
 
 ## HTTP & Realtime
 
