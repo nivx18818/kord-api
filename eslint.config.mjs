@@ -199,4 +199,12 @@ export default defineConfig([
       'perfectionist/sort-classes': 'off',
     },
   },
+  {
+    files: ['**/*.spec.ts', '**/*.e2e-spec.ts', 'test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      'jest/unbound-method': 'error',
+    },
+  },
 ]);
