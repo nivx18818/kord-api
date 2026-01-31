@@ -1,4 +1,4 @@
-import { ChannelStatus, ChannelType } from 'generated/prisma';
+import { ChannelStatus, ChannelType } from 'generated/prisma/enums';
 
 export const mockUser = {
   createdAt: new Date(),
