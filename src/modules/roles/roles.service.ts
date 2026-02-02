@@ -6,8 +6,8 @@ import {
   PermissionsMap,
 } from '@/common/constants/permissions.enum';
 import {
-  KordForbiddenException,
   MissingPermissionsException,
+  NoRolesAssignedException,
   NotMemberOfServerException,
   RoleNotFoundException,
   RolesNotFoundException,
@@ -244,7 +244,7 @@ export class RolesService {
     });
 
     if (membershipRoles.length === 0) {
-      throw new KordForbiddenException('User has no roles assigned');
+      throw new NoRolesAssignedException();
     }
 
     const aggregatedPermissions: PermissionsMap = {};

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Message } from 'generated/prisma';
 import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
@@ -7,6 +7,8 @@ import {
   MessagePaginationDto,
 } from '@/common/dto/pagination.dto';
 import {
+  CannotDeleteOthersMessagesException,
+  CannotEditOthersMessagesException,
   ChannelNotFoundException,
   MessageNotFoundException,
   UserNotFoundException,
@@ -153,7 +155,7 @@ export class MessagesService {
 
       // Check if the user owns the message
       if (existingMessage.userId !== userId) {
-        throw new ForbiddenException('You can only edit your own messages');
+        throw new CannotEditOthersMessagesException();
       }
 
       const message = await this.prisma.message.update({
@@ -197,7 +199,7 @@ export class MessagesService {
 
       // Check if the user owns the message
       if (existingMessage.userId !== userId) {
-        throw new ForbiddenException('You can only delete your own messages');
+        throw new CannotDeleteOthersMessagesException();
       }
 
       const message = await this.prisma.message.update({

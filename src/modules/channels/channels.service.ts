@@ -1,9 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import {
+  CanOnlyBlockDMChannelsException,
   ChannelNotFoundException,
+  DMAlreadyBlockedException,
+  DMBlockNotFoundException,
   ServerNotFoundException,
+  UserAlreadyParticipantException,
 } from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -215,7 +219,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new BadRequestException('User is already a participant');
+        throw new UserAlreadyParticipantException();
       }
       throw error;
     }
@@ -231,7 +235,7 @@ export class ChannelsService {
     }
 
     if (!channel.isDM) {
-      throw new BadRequestException('Can only block DM channels');
+      throw new CanOnlyBlockDMChannelsException();
     }
 
     try {
@@ -246,7 +250,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new BadRequestException('DM already blocked');
+        throw new DMAlreadyBlockedException();
       }
       throw error;
     }
@@ -258,7 +262,7 @@ export class ChannelsService {
     });
 
     if (!block) {
-      throw new BadRequestException('DM block not found');
+      throw new DMBlockNotFoundException();
     }
 
     return await this.prisma.channelBlock.delete({

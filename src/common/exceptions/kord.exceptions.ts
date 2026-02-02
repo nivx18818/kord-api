@@ -125,6 +125,69 @@ export class InvalidPaginationParamsException extends BadRequestException {
   }
 }
 
+export class CannotMuteSelfException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_MUTE_SELF,
+      message: getErrorMessage(ErrorCode.CANNOT_MUTE_SELF),
+    });
+  }
+}
+
+export class UserAlreadyMutedException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.USER_ALREADY_MUTED,
+      message: getErrorMessage(ErrorCode.USER_ALREADY_MUTED),
+    });
+  }
+}
+
+export class MuteNotFoundException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.MUTE_NOT_FOUND,
+      message: getErrorMessage(ErrorCode.MUTE_NOT_FOUND),
+    });
+  }
+}
+
+export class UserAlreadyParticipantException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.USER_ALREADY_PARTICIPANT,
+      message: getErrorMessage(ErrorCode.USER_ALREADY_PARTICIPANT),
+    });
+  }
+}
+
+export class CanOnlyBlockDMChannelsException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS,
+      message: getErrorMessage(ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS),
+    });
+  }
+}
+
+export class DMAlreadyBlockedException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.DM_ALREADY_BLOCKED,
+      message: getErrorMessage(ErrorCode.DM_ALREADY_BLOCKED),
+    });
+  }
+}
+
+export class DMBlockNotFoundException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.DM_BLOCK_NOT_FOUND,
+      message: getErrorMessage(ErrorCode.DM_BLOCK_NOT_FOUND),
+    });
+  }
+}
+
 // ============================================================================
 // 401 - Unauthorized (Authentication Errors)
 // ============================================================================
@@ -250,6 +313,33 @@ export class UserMutedException extends ForbiddenException {
     super({
       code: ErrorCode.USER_MUTED,
       message: getErrorMessage(ErrorCode.USER_MUTED),
+    });
+  }
+}
+
+export class CannotEditOthersMessagesException extends ForbiddenException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_EDIT_OTHERS_MESSAGES,
+      message: getErrorMessage(ErrorCode.CANNOT_EDIT_OTHERS_MESSAGES),
+    });
+  }
+}
+
+export class CannotDeleteOthersMessagesException extends ForbiddenException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_DELETE_OTHERS_MESSAGES,
+      message: getErrorMessage(ErrorCode.CANNOT_DELETE_OTHERS_MESSAGES),
+    });
+  }
+}
+
+export class NoRolesAssignedException extends ForbiddenException {
+  constructor() {
+    super({
+      code: ErrorCode.NO_ROLES_ASSIGNED,
+      message: getErrorMessage(ErrorCode.NO_ROLES_ASSIGNED),
     });
   }
 }
@@ -411,6 +501,15 @@ export class ChannelAlreadyExistsException extends ConflictException {
     super({
       code: ErrorCode.CHANNEL_ALREADY_EXISTS,
       message: `${getErrorMessage(ErrorCode.CHANNEL_ALREADY_EXISTS)}: ${channelName}`,
+    });
+  }
+}
+
+export class ProfileAlreadyExistsException extends ConflictException {
+  constructor(userId: number) {
+    super({
+      code: ErrorCode.PROFILE_ALREADY_EXISTS,
+      message: `${getErrorMessage(ErrorCode.PROFILE_ALREADY_EXISTS)} for user: ${userId}`,
     });
   }
 }

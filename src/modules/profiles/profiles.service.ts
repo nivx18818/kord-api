@@ -1,7 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
-import { ProfileNotFoundException } from '@/common/exceptions/kord.exceptions';
+import {
+  ProfileAlreadyExistsException,
+  ProfileNotFoundException,
+} from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -24,7 +27,7 @@ export class ProfilesService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Profile for this user already exists');
+        throw new ProfileAlreadyExistsException(createProfileDto.userId);
       }
       throw error;
     }

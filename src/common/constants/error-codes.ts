@@ -16,6 +16,13 @@ export enum ErrorCode {
   INVALID_MESSAGE_CONTENT = 40007,
   INVALID_PAGINATION_CURSOR = 40008,
   INVALID_PAGINATION_PARAMS = 40009,
+  CANNOT_MUTE_SELF = 40010,
+  USER_ALREADY_MUTED = 40011,
+  MUTE_NOT_FOUND = 40012,
+  USER_ALREADY_PARTICIPANT = 40013,
+  CAN_ONLY_BLOCK_DM_CHANNELS = 40014,
+  DM_ALREADY_BLOCKED = 40015,
+  DM_BLOCK_NOT_FOUND = 40016,
   // 401 - Unauthorized
   UNAUTHORIZED = 40100,
   INVALID_ACCESS_TOKEN = 40101,
@@ -31,6 +38,9 @@ export enum ErrorCode {
   CANNOT_MESSAGE_USER = 40305,
   USER_BLOCKED = 40306,
   USER_MUTED = 40307,
+  CANNOT_EDIT_OTHERS_MESSAGES = 40308,
+  CANNOT_DELETE_OTHERS_MESSAGES = 40309,
+  NO_ROLES_ASSIGNED = 40310,
   // 404 - Not Found
   NOT_FOUND = 40400,
   USER_NOT_FOUND = 40401,
@@ -52,6 +62,7 @@ export enum ErrorCode {
   ALREADY_HAS_ROLE = 40905,
   ALREADY_REACTED = 40906,
   CHANNEL_ALREADY_EXISTS = 40907,
+  PROFILE_ALREADY_EXISTS = 40908,
   // 429 - Too Many Requests
   RATE_LIMIT_EXCEEDED = 42900,
   TOO_MANY_MESSAGES = 42901,
@@ -75,6 +86,13 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.INVALID_MESSAGE_CONTENT]: 'Invalid message content',
   [ErrorCode.INVALID_PAGINATION_CURSOR]: 'Invalid pagination cursor',
   [ErrorCode.INVALID_PAGINATION_PARAMS]: 'Invalid pagination parameters',
+  [ErrorCode.CANNOT_MUTE_SELF]: 'Cannot mute yourself',
+  [ErrorCode.USER_ALREADY_MUTED]: 'User is already muted',
+  [ErrorCode.MUTE_NOT_FOUND]: 'Mute not found',
+  [ErrorCode.USER_ALREADY_PARTICIPANT]: 'User is already a participant',
+  [ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS]: 'Can only block DM channels',
+  [ErrorCode.DM_ALREADY_BLOCKED]: 'DM is already blocked',
+  [ErrorCode.DM_BLOCK_NOT_FOUND]: 'DM block not found',
   // 401 - Unauthorized
   [ErrorCode.UNAUTHORIZED]: 'Authentication required',
   [ErrorCode.INVALID_ACCESS_TOKEN]: 'Invalid authentication token',
@@ -90,6 +108,11 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CANNOT_MESSAGE_USER]: 'You cannot message this user',
   [ErrorCode.USER_BLOCKED]: 'You have been blocked by this user',
   [ErrorCode.USER_MUTED]: 'You have been muted in this channel',
+  [ErrorCode.CANNOT_EDIT_OTHERS_MESSAGES]:
+    'You can only edit your own messages',
+  [ErrorCode.CANNOT_DELETE_OTHERS_MESSAGES]:
+    'You can only delete your own messages',
+  [ErrorCode.NO_ROLES_ASSIGNED]: 'User has no roles assigned',
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: 'Resource not found',
   [ErrorCode.USER_NOT_FOUND]: 'User not found',
@@ -111,6 +134,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.ALREADY_HAS_ROLE]: 'User already has this role',
   [ErrorCode.ALREADY_REACTED]: 'You have already reacted with this emoji',
   [ErrorCode.CHANNEL_ALREADY_EXISTS]: 'Channel already exists',
+  [ErrorCode.PROFILE_ALREADY_EXISTS]: 'Profile already exists',
   // 429 - Too Many Requests
   [ErrorCode.RATE_LIMIT_EXCEEDED]: 'Rate limit exceeded',
   [ErrorCode.TOO_MANY_MESSAGES]: 'Too many messages sent',

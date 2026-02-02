@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import {
@@ -6,7 +6,10 @@ import {
   OffsetPaginationDto,
 } from '@/common/dto/pagination.dto';
 import {
+  CannotMuteSelfException,
   EmailAlreadyExistsException,
+  MuteNotFoundException,
+  UserAlreadyMutedException,
   UsernameAlreadyExistsException,
   UserNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
@@ -168,7 +171,7 @@ export class UsersService {
 
   async muteUser(userId: number, targetId: number, reason?: string) {
     if (userId === targetId) {
-      throw new BadRequestException('Cannot mute yourself');
+      throw new CannotMuteSelfException();
     }
 
     // Check if both users exist
@@ -197,7 +200,7 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new BadRequestException('User already muted');
+        throw new UserAlreadyMutedException();
       }
       throw error;
     }
@@ -209,7 +212,7 @@ export class UsersService {
     });
 
     if (!mute) {
-      throw new BadRequestException('Mute not found');
+      throw new MuteNotFoundException();
     }
 
     return await this.prisma.userMute.delete({
