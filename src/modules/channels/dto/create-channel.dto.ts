@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { ChannelStatus, ChannelType } from 'generated/prisma';
+import { ChannelStatus, ChannelType } from 'generated/prisma/enums';
 
 export class CreateChannelDto {
   @IsString()

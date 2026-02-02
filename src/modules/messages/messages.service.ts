@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Message } from 'generated/prisma';
+import { Message } from 'generated/prisma/client';
 import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
 
 import {

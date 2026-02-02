@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from 'generated/prisma/client';
 
 import { ErrorCode, getErrorMessage } from '../constants/error-codes';
 
