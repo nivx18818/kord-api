@@ -705,7 +705,6 @@ describe('User Journey (e2e)', () => {
   describe('Phase 8: Direct Messages (DMs)', () => {
     it('should create or find a DM channel between users', async () => {
       const dmData = {
-        serverId,
         user1Id,
         user2Id,
       };

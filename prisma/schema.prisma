@@ -94,8 +94,8 @@ model Channel {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  serverId      Int                  @map("server_id")
-  server        Server               @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  serverId      Int?                 @map("server_id")
+  server        Server?              @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages      Message[]
   channelBlocks ChannelBlock[]
   participants  ChannelParticipant[]

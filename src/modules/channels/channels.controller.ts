@@ -48,7 +48,6 @@ export class ChannelsController {
     return this.channelsService.findOrCreateDM(
       findOrCreateDMDto.user1Id,
       findOrCreateDMDto.user2Id,
-      findOrCreateDMDto.serverId,
     );
   }
 

@@ -6,7 +6,4 @@ export class FindOrCreateDMDto {
 
   @IsInt()
   user2Id: number;
-
-  @IsInt()
-  serverId: number;
 }

@@ -536,11 +536,10 @@ async function deleteChannel(channelId) {
 }
 
 // Find or create DM
-async function findOrCreateDM(user1Id, user2Id, serverId) {
+async function findOrCreateDM(user1Id, user2Id) {
   const response = await api.post('/channels/dm', {
     user1Id,
     user2Id,
-    serverId,
   });
   return response.data;
 }
@@ -593,7 +592,7 @@ function DirectMessages({ currentUserId, serverId }) {
 
   const handleStartDM = async (otherUserId) => {
     try {
-      const dm = await findOrCreateDM(currentUserId, otherUserId, serverId);
+      const dm = await findOrCreateDM(currentUserId, otherUserId);
       // Navigate to DM or update state
       console.log('DM channel:', dm);
     } catch (error) {

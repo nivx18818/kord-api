@@ -56,7 +56,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2003'
       ) {
-        throw new ServerNotFoundException(createChannelDto.serverId);
+        throw new ServerNotFoundException(createChannelDto.serverId!);
       }
       throw error;
     }
@@ -79,14 +79,13 @@ export class ChannelsService {
     return channel;
   }
 
-  async findOrCreateDM(user1Id: number, user2Id: number, serverId: number) {
+  async findOrCreateDM(user1Id: number, user2Id: number) {
     // Look for existing DM between these two users using participants table
     // We need to find channels where BOTH users are participants
     const channels = await this.prisma.channel.findMany({
       include: this.includeOptions,
       where: {
         isDM: true,
-        serverId,
       },
     });
 
@@ -113,7 +112,6 @@ export class ChannelsService {
         participants: {
           create: [{ userId: user1Id }, { userId: user2Id }],
         },
-        serverId,
         status: 'PRIVATE',
         type: 'TEXT',
       },

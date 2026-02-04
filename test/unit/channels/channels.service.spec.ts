@@ -188,14 +188,13 @@ describe('ChannelsService', () => {
 
       prisma.channel.findMany.mockResolvedValue([mockChannel as any]);
 
-      const result = await service.findOrCreateDM(1, 2, 1);
+      const result = await service.findOrCreateDM(1, 2);
 
       expect(result).toEqual(mockChannel);
       expect(prisma.channel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             isDM: true,
-            serverId: 1,
           },
         }),
       );
@@ -213,7 +212,7 @@ describe('ChannelsService', () => {
       prisma.channel.findMany.mockResolvedValue([]);
       prisma.channel.create.mockResolvedValue(mockNewChannel as any);
 
-      const result = await service.findOrCreateDM(1, 2, 1);
+      const result = await service.findOrCreateDM(1, 2);
 
       expect(result).toEqual(mockNewChannel);
       expect(prisma.channel.create).toHaveBeenCalledWith(
@@ -224,7 +223,6 @@ describe('ChannelsService', () => {
             participants: {
               create: [{ userId: 1 }, { userId: 2 }],
             },
-            serverId: 1,
             status: 'PRIVATE',
             type: 'TEXT',
           }),
