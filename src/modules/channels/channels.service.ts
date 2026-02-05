@@ -79,11 +79,18 @@ export class ChannelsService {
     return channel;
   }
 
-  async findOrCreateDM(user1Id: number, user2Id: number) {
-    // Look for existing DM between these two users using participants table
-    // We need to find channels where BOTH users are participants
+  async findOrCreateDM(userId: number, otherParticipantIds: number[]) {
+    const allParticipantIds = [userId, ...otherParticipantIds].sort();
+
+    // Look for existing DM with exact same participants
     const channels = await this.prisma.channel.findMany({
-      include: this.includeOptions,
+      include: {
+        participants: {
+          select: {
+            userId: true,
+          },
+        },
+      },
       where: {
         isDM: true,
       },
@@ -91,26 +98,44 @@ export class ChannelsService {
 
     // Filter to find channel with exactly these two participants
     for (const channel of channels) {
-      const participantIds = channel.participants.map((p) => p.userId).sort();
-      const targetIds = [user1Id, user2Id].sort();
+      const channelParticipantIds = channel.participants
+        .map((p) => p.userId)
+        .sort();
 
       if (
-        participantIds.length === 2 &&
-        participantIds[0] === targetIds[0] &&
-        participantIds[1] === targetIds[1]
+        channelParticipantIds.length === allParticipantIds.length &&
+        channelParticipantIds.every(
+          (id, index) => id === allParticipantIds[index],
+        )
       ) {
-        return channel;
+        return await this.findOne(channel.id);
       }
     }
+
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+      },
+      where: {
+        id: { in: allParticipantIds },
+      },
+    });
+
+    const sortedUsernames = otherParticipantIds
+      .map((id) => users.find((u) => u.id === id)?.username)
+      .filter(Boolean);
+
+    const groupDMName = sortedUsernames.join(', ');
 
     // Create new DM channel with participants
     return await this.prisma.channel.create({
       include: this.includeOptions,
       data: {
         isDM: true,
-        name: `DM-${user1Id}-${user2Id}`,
+        name: groupDMName,
         participants: {
-          create: [{ userId: user1Id }, { userId: user2Id }],
+          create: allParticipantIds.map((id) => ({ userId: id })),
         },
         status: 'PRIVATE',
         type: 'TEXT',
@@ -223,7 +248,7 @@ export class ChannelsService {
     }
   }
 
-  async blockDM(userId: number, channelId: number) {
+  async blockDM(channelId: number, userId: number) {
     const channel = await this.prisma.channel.findUnique({
       where: { id: channelId },
     });
@@ -254,7 +279,7 @@ export class ChannelsService {
     }
   }
 
-  async unblockDM(userId: number, channelId: number) {
+  async unblockDM(channelId: number, userId: number) {
     const block = await this.prisma.channelBlock.findFirst({
       where: { channelId, userId },
     });

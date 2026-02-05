@@ -14,9 +14,12 @@ import { RequiredPermissions } from '@/common/decorators/required-permissions.de
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
+import {
+  CurrentUser,
+  type RequestUser,
+} from '../auth/decorators/current-user.decorator';
 import { ChannelsService } from './channels.service';
 import { AddParticipantDto } from './dto/add-participant.dto';
-import { BlockDMDto } from './dto/block-dm.dto';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { FindOrCreateDMDto } from './dto/find-or-create-dm.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
@@ -44,16 +47,19 @@ export class ChannelsController {
   }
 
   @Post('dm')
-  findOrCreateDM(@Body() findOrCreateDMDto: FindOrCreateDMDto) {
+  findOrCreateDM(
+    @Body() findOrCreateDMDto: FindOrCreateDMDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.channelsService.findOrCreateDM(
-      findOrCreateDMDto.user1Id,
-      findOrCreateDMDto.user2Id,
+      user.id,
+      findOrCreateDMDto.otherParticipantIds,
     );
   }
 
-  @Get('user/:userId/dms')
-  getUserDMs(@Param('userId') userId: string) {
-    return this.channelsService.getUserDMs(+userId);
+  @Get('dms')
+  getUserDMs(@CurrentUser() user: RequestUser) {
+    return this.channelsService.getUserDMs(user.id);
   }
 
   @Patch(':channelId')
@@ -72,6 +78,7 @@ export class ChannelsController {
   }
 
   @Delete(':channelId/participants/:userId')
+  @RequiredPermissions(Permission.MANAGE_CHANNELS)
   removeParticipant(
     @Param('channelId') channelId: string,
     @Param('userId') userId: string,
@@ -80,6 +87,7 @@ export class ChannelsController {
   }
 
   @Post(':channelId/participants')
+  @RequiredPermissions(Permission.MANAGE_CHANNELS)
   addParticipant(
     @Param('channelId') channelId: string,
     @Body() addParticipantDto: AddParticipantDto,
@@ -93,16 +101,16 @@ export class ChannelsController {
   @Post(':channelId/block')
   blockDM(
     @Param('channelId') channelId: string,
-    @Body() blockDMDto: BlockDMDto,
+    @CurrentUser() user: RequestUser,
   ) {
-    return this.channelsService.blockDM(blockDMDto.userId, +channelId);
+    return this.channelsService.blockDM(+channelId, user.id);
   }
 
-  @Delete(':channelId/block/:userId')
+  @Delete(':channelId/block')
   unblockDM(
     @Param('channelId') channelId: string,
-    @Param('userId') userId: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    return this.channelsService.unblockDM(+userId, +channelId);
+    return this.channelsService.unblockDM(+channelId, user.id);
   }
 }
