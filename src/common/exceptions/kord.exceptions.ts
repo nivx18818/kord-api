@@ -438,6 +438,15 @@ export class InviteNotFoundException extends NotFoundException {
   }
 }
 
+export class ChannelParticipantNotFoundException extends NotFoundException {
+  constructor(userId: number, channelId: number) {
+    super({
+      code: ErrorCode.CHANNEL_PARTICIPANT_NOT_FOUND,
+      message: `${getErrorMessage(ErrorCode.CHANNEL_PARTICIPANT_NOT_FOUND)}: user ${userId} in channel ${channelId}`,
+    });
+  }
+}
+
 // ============================================================================
 // 409 - Conflict
 // ============================================================================

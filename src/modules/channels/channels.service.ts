@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaN
 import {
   CanOnlyBlockDMChannelsException,
   ChannelNotFoundException,
+  ChannelParticipantNotFoundException,
   DMAlreadyBlockedException,
   DMBlockNotFoundException,
   ServerNotFoundException,
@@ -215,7 +216,7 @@ export class ChannelsService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        throw new ChannelNotFoundException('Participant not found');
+        throw new ChannelParticipantNotFoundException(userId, channelId);
       }
       throw error;
     }
