@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  PrismaClientKnownRequestError,
+  type ReactionInclude,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   AlreadyReactedException,
@@ -12,15 +15,17 @@ import { UpdateReactionDto } from './dto/update-reaction.dto';
 
 @Injectable()
 export class ReactionsService {
+  private readonly includeOptions: ReactionInclude = {
+    message: true,
+    user: true,
+  };
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createReactionDto: CreateReactionDto) {
     try {
       return await this.prisma.reaction.create({
-        include: {
-          message: true,
-          user: true,
-        },
+        include: this.includeOptions,
         data: createReactionDto,
       });
     } catch (error) {
@@ -42,19 +47,13 @@ export class ReactionsService {
 
   async findAll() {
     return this.prisma.reaction.findMany({
-      include: {
-        message: true,
-        user: true,
-      },
+      include: this.includeOptions,
     });
   }
 
   async findOne(messageId: number, userId: number) {
     return this.prisma.reaction.findUnique({
-      include: {
-        message: true,
-        user: true,
-      },
+      include: this.includeOptions,
       where: {
         messageId_userId: {
           messageId,
@@ -71,10 +70,7 @@ export class ReactionsService {
   ) {
     try {
       return await this.prisma.reaction.update({
-        include: {
-          message: true,
-          user: true,
-        },
+        include: this.includeOptions,
         where: {
           messageId_userId: {
             messageId,

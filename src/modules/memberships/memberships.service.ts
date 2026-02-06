@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  type MembershipInclude,
+  PrismaClientKnownRequestError,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   AlreadyMemberOfServerException,
@@ -15,21 +18,23 @@ import { UpdateMembershipDto } from './dto/update-membership.dto';
 
 @Injectable()
 export class MembershipsService {
+  private readonly includeOptions: MembershipInclude = {
+    roles: {
+      include: {
+        role: true,
+      },
+    },
+    server: true,
+    user: true,
+  };
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createMembershipDto: CreateMembershipDto) {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const membership = await tx.membership.create({
-          include: {
-            roles: {
-              include: {
-                role: true,
-              },
-            },
-            server: true,
-            user: true,
-          },
+          include: this.includeOptions,
           data: {
             serverId: createMembershipDto.serverId,
             userId: createMembershipDto.userId,
@@ -81,29 +86,13 @@ export class MembershipsService {
 
   async findAll() {
     return this.prisma.membership.findMany({
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-        server: true,
-        user: true,
-      },
+      include: this.includeOptions,
     });
   }
 
   async findOne(userId: number, serverId: number) {
     return this.prisma.membership.findUnique({
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-        server: true,
-        user: true,
-      },
+      include: this.includeOptions,
       where: {
         userId_serverId: {
           serverId,
@@ -121,15 +110,7 @@ export class MembershipsService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const membership = await tx.membership.update({
-          include: {
-            roles: {
-              include: {
-                role: true,
-              },
-            },
-            server: true,
-            user: true,
-          },
+          include: this.includeOptions,
           where: {
             userId_serverId: {
               serverId,

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Message } from 'generated/prisma/client';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  type MessageInclude,
+  PrismaClientKnownRequestError,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   buildCursorPaginatedResponse,
@@ -21,7 +24,7 @@ import { MessagesGateway } from './messages.gateway';
 
 @Injectable()
 export class MessagesService {
-  private readonly includeOptions = {
+  private readonly includeOptions: MessageInclude = {
     attachments: true,
     channel: true,
     parentMessage: true,

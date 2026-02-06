@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  PrismaClientKnownRequestError,
+  type ServerInclude,
+} from 'generated/prisma/internal/prismaNamespace';
 import { nanoid } from 'nanoid';
 
 import {
@@ -25,11 +28,15 @@ import { UpdateServerDto } from './dto/update-server.dto';
 
 @Injectable()
 export class ServersService {
-  private readonly includeOptions = {
+  private readonly includeOptions: ServerInclude = {
     channels: true,
     members: {
       include: {
-        role: true,
+        roles: {
+          include: {
+            role: true,
+          },
+        },
         user: true,
       },
     },

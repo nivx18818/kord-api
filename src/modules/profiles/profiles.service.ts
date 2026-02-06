@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  PrismaClientKnownRequestError,
+  type ProfileInclude,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   ProfileAlreadyExistsException,
@@ -12,14 +15,16 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class ProfilesService {
+  private readonly includeOptions: ProfileInclude = {
+    user: true,
+  };
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createProfileDto: CreateProfileDto) {
     try {
       return await this.prisma.profile.create({
-        include: {
-          user: true,
-        },
+        include: this.includeOptions,
         data: createProfileDto,
       });
     } catch (error) {
@@ -35,17 +40,13 @@ export class ProfilesService {
 
   async findAll() {
     return await this.prisma.profile.findMany({
-      include: {
-        user: true,
-      },
+      include: this.includeOptions,
     });
   }
 
   async findOne(userId: number) {
     return await this.prisma.profile.findUnique({
-      include: {
-        user: true,
-      },
+      include: this.includeOptions,
       where: { userId },
     });
   }
@@ -53,9 +54,7 @@ export class ProfilesService {
   async update(userId: number, updateProfileDto: UpdateProfileDto) {
     try {
       return await this.prisma.profile.update({
-        include: {
-          user: true,
-        },
+        include: this.includeOptions,
         where: { userId },
         data: updateProfileDto,
       });

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  type ChannelInclude,
+  PrismaClientKnownRequestError,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   CanOnlyBlockDMChannelsException,
@@ -17,7 +20,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 
 @Injectable()
 export class ChannelsService {
-  private readonly includeOptions = {
+  private readonly includeOptions: ChannelInclude = {
     messages: {
       include: {
         attachments: true,
@@ -123,11 +126,11 @@ export class ChannelsService {
       },
     });
 
-    const sortedUsernames = otherParticipantIds
+    const otherUsernames = otherParticipantIds
       .map((id) => users.find((u) => u.id === id)?.username)
       .filter(Boolean);
 
-    const groupDMName = sortedUsernames.join(', ');
+    const groupDMName = otherUsernames.join(', ');
 
     // Create new DM channel with participants
     return await this.prisma.channel.create({

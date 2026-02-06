@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  type AttachmentInclude,
+  PrismaClientKnownRequestError,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   AttachmentNotFoundException,
@@ -12,7 +15,7 @@ import { UpdateAttachmentDto } from './dto/update-attachment.dto';
 
 @Injectable()
 export class AttachmentsService {
-  private readonly includeOptions = {
+  private readonly includeOptions: AttachmentInclude = {
     message: true,
   };
 

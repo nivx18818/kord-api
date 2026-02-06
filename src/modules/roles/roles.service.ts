@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from 'generated/prisma/internal/prismaNamespace';
+import {
+  PrismaClientKnownRequestError,
+  type RoleInclude,
+} from 'generated/prisma/internal/prismaNamespace';
 
 import {
   Permission,
@@ -20,14 +23,18 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 
 @Injectable()
 export class RolesService {
-  private readonly includeOptions = {
-    server: true,
-    users: {
+  private readonly includeOptions: RoleInclude = {
+    memberships: {
       include: {
-        server: true,
-        user: true,
+        membership: {
+          include: {
+            server: true,
+            user: true,
+          },
+        },
       },
     },
+    server: true,
   };
 
   constructor(private readonly prisma: PrismaService) {}
@@ -219,7 +226,7 @@ export class RolesService {
       return true;
     }
 
-    // Get user's membership with role
+    // Get user's membership
     const membership = await this.prisma.membership.findUnique({
       where: {
         userId_serverId: {
@@ -247,6 +254,7 @@ export class RolesService {
       throw new NoRolesAssignedException();
     }
 
+    // Aggregate permissions using OR logic (union of all role permissions)
     const aggregatedPermissions: PermissionsMap = {};
 
     for (const mr of membershipRoles) {
