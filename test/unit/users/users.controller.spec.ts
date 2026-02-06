@@ -66,7 +66,7 @@ describe('UsersController', () => {
       const users = [createMockUserWithProfile()];
       mockUsersService.findAll.mockResolvedValue(users);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({ limit: 10, page: 1 });
 
       expect(result).toEqual(users);
       expect(service.findAll).toHaveBeenCalled();
