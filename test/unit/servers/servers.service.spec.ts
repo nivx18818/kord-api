@@ -371,8 +371,14 @@ describe('ServersService', () => {
       };
 
       const mockMembership = {
-        role: mockExistingMemberRole,
-        roleId: mockExistingMemberRole.id,
+        roles: [{
+          roleId: mockExistingMemberRole.id,
+          serverId,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          role: mockExistingMemberRole,
+        }],
         server: mockServer,
         serverId,
         user: {
@@ -382,6 +388,8 @@ describe('ServersService', () => {
           username: 'user2',
         },
         userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       prisma.invite.findUnique.mockResolvedValue(mockInvite);
@@ -393,6 +401,9 @@ describe('ServersService', () => {
         const mockTx = {
           membership: {
             create: jest.fn().mockResolvedValue(mockMembership),
+          },
+          membershipRole: {
+            create: jest.fn(),
           },
           role: {
             create: jest.fn(), // Should not be called
@@ -406,7 +417,7 @@ describe('ServersService', () => {
       const result = await service.redeemInvite(inviteCode, userId);
 
       expect(result).toEqual(mockMembership);
-      expect(result.roleId).toBe(mockExistingMemberRole.id);
+      expect(result.roles[0].roleId).toBe(mockExistingMemberRole.id);
     });
 
     it('should throw NotFoundException when invite does not exist', async () => {

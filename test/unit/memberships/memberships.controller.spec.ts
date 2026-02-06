@@ -84,12 +84,12 @@ describe('MembershipsController', () => {
   describe('update', () => {
     it('should update a membership', async () => {
       const updateMembershipDto: UpdateMembershipDto = {
-        roleId: 2,
+        roleIds: [2],
       };
 
       const updatedMembership = {
         ...mockMembership,
-        roleId: 2,
+        roles: [{ roleId: 2, role: { id: 2, name: 'Admin' } }],
       };
       mockMembershipsService.update.mockResolvedValue(updatedMembership);
 

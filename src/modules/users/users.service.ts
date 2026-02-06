@@ -85,7 +85,11 @@ export class UsersService {
       include: {
         UserServer: {
           include: {
-            role: true,
+            roles: {
+              include: {
+                role: true,
+              },
+            },
             server: true,
           },
         },
@@ -100,7 +104,7 @@ export class UsersService {
     return user.UserServer.map((membership) => ({
       ...membership.server,
       joinedAt: membership.createdAt,
-      role: membership.role,
+      roles: membership.roles.map((mr) => mr.role),
     }));
   }
 

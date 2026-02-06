@@ -88,18 +88,35 @@ describe('MembershipsService', () => {
   describe('update', () => {
     it('should update a membership', async () => {
       const updateMembershipDto: UpdateMembershipDto = {
-        roleId: 2,
+        roleIds: [2],
       };
 
       const updatedMembership = {
         ...mockMembership,
-        roleId: 2,
+        roles: [
+          {
+            roleId: 2,
+            userId: 1,
+            serverId: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            role: {
+              id: 2,
+              name: 'Admin',
+              serverId: 1,
+              permissions: '{}',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        ],
       };
       prisma.membership.update.mockResolvedValue(updatedMembership);
 
       const result = await service.update(1, 1, updateMembershipDto);
 
-      expect(result.roleId).toBe(2);
+      expect(result.roles).toBeDefined();
+      expect(result.roles[0].roleId).toBe(2);
       expect(prisma.membership.update.mock.calls.length).toBeGreaterThan(0);
     });
   });

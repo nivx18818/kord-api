@@ -216,9 +216,13 @@ describe('Simplified User Journey (e2e)', () => {
       // Add user1 as admin member
       await prisma.membership.create({
         data: {
-          roleId: adminRoleId,
           serverId,
           userId: user1Id,
+          roles: {
+            create: {
+              roleId: adminRoleId,
+            },
+          },
         },
       });
 
