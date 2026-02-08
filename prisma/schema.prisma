@@ -28,6 +28,8 @@ model User {
   mutedUsers         UserMute[]           @relation("MutedUsers")
   channelBlocks      ChannelBlock[]
   channelParticipant ChannelParticipant[]
+  blockedBy          UserBlock[]          @relation("BlockedBy")
+  blockedUsers       UserBlock[]          @relation("BlockedUsers")
 
   @@index([createdAt])
   @@map("users")
@@ -218,6 +220,22 @@ model UserMute {
   @@index([userId])
   @@index([targetId])
   @@map("user_mutes")
+}
+
+model UserBlock {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId   Int  @map("user_id")
+  user     User @relation("BlockedBy", fields: [userId], references: [id], onDelete: Cascade)
+  targetId Int  @map("target_id")
+  target   User @relation("BlockedUsers", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId])
+  @@index([userId])
+  @@index([targetId])
+  @@map("user_blocks")
 }
 
 model ChannelBlock {
