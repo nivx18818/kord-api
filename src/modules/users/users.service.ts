@@ -108,6 +108,38 @@ export class UsersService {
     }));
   }
 
+  async getBlockedUserIds(userId: number) {
+    const blockedUsers = await this.prisma.userBlock.findMany({
+      select: {
+        targetId: true,
+      },
+      where: {
+        userId,
+      },
+    });
+
+    return blockedUsers.map((u) => u.targetId);
+  }
+
+  async getBlockedUsers(userId: number) {
+    const blockedUsers = await this.prisma.userBlock.findMany({
+      include: {
+        target: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+          },
+        },
+      },
+      where: {
+        userId,
+      },
+    });
+
+    return blockedUsers;
+  }
+
   async getMutedUsers(userId: number) {
     return await this.prisma.userMute.findMany({
       include: {
@@ -173,6 +205,51 @@ export class UsersService {
     }
   }
 
+  async blockUser(userId: number, targetId: number) {
+    if (userId === targetId) {
+      // TODO: replace with custom exception - CannotBlockSelfException()
+      throw new Error('Cannot block yourself');
+    }
+
+    const [user, target] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.user.findUnique({ where: { id: targetId } }),
+    ]);
+
+    if (!user) {
+      throw new UserNotFoundException(userId);
+    }
+    if (!target) {
+      throw new UserNotFoundException(targetId);
+    }
+
+    try {
+      return await this.prisma.userBlock.create({
+        data: {
+          targetId,
+          userId,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        // TODO: replace with custom exception - UserAlreadyBlockedException()
+        throw new Error();
+      }
+      throw error;
+    }
+  }
+
+  async hasUserBlocked(userId: number, targetId: number) {
+    const block = await this.prisma.userBlock.findFirst({
+      where: { targetId, userId },
+    });
+
+    return block !== null;
+  }
+
   async muteUser(userId: number, targetId: number, reason?: string) {
     if (userId === targetId) {
       throw new CannotMuteSelfException();
@@ -208,6 +285,21 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  async unblockUser(userId: number, targetId: number) {
+    const block = await this.prisma.userBlock.findFirst({
+      where: { targetId, userId },
+    });
+
+    if (!block) {
+      // TODO: replace with custom exception - BlockNotFoundException()
+      throw new Error('Block not found');
+    }
+
+    return await this.prisma.userBlock.delete({
+      where: { id: block.id },
+    });
   }
 
   async unmuteUser(userId: number, targetId: number) {
