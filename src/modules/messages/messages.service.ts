@@ -13,11 +13,14 @@ import {
   CannotDeleteOthersMessagesException,
   CannotEditOthersMessagesException,
   ChannelNotFoundException,
+  ChannelParticipantNotFoundException,
   MessageNotFoundException,
   UserNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
 
+import { ChannelsService } from '../channels/channels.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { MessagesGateway } from './messages.gateway';
@@ -50,9 +53,38 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly messagesGateway: MessagesGateway,
+    private readonly usersService: UsersService,
+    private readonly channelsService: ChannelsService,
   ) {}
 
   async create(createMessageDto: CreateMessageDto) {
+    const channel = await this.channelsService.findOne(
+      createMessageDto.channelId,
+    );
+    const participants = channel.participants;
+    const senderId = createMessageDto.userId;
+
+    if (channel.isDM && participants.length === 2) {
+      const otherParticipant = participants.find((p) => p.userId !== senderId);
+
+      if (!otherParticipant) {
+        throw new ChannelParticipantNotFoundException(
+          senderId,
+          createMessageDto.channelId,
+        );
+      }
+
+      if (
+        await this.usersService.hasUserBlocked(
+          senderId,
+          otherParticipant.userId,
+        )
+      ) {
+        // TODO: replace with custom exception - CannotMessageBlockedUserException()
+        throw new Error('Cannot message blocked user');
+      }
+    }
+
     try {
       const message = await this.prisma.message.create({
         include: this.includeOptions,
