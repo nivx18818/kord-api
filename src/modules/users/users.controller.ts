@@ -13,6 +13,10 @@ import {
 import { OffsetPaginationDto } from '@/common/dto/pagination.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
+import {
+  CurrentUser,
+  type RequestUser,
+} from '../auth/decorators/current-user.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { MuteUserDto } from './dto/mute-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -43,6 +47,12 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me/blocks')
+  getBlockedUsers(@CurrentUser() user: RequestUser) {
+    return this.usersService.getBlockedUsers(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/muted')
   getMutedUsers(@Param('id') id: string) {
     return this.usersService.getMutedUsers(+id);
@@ -61,6 +71,15 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('me/blocks/:targetId')
+  blockUser(
+    @Param('targetId') targetId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.usersService.blockUser(user.id, +targetId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':id/mute')
   muteUser(@Param('id') id: string, @Body() muteUserDto: MuteUserDto) {
     return this.usersService.muteUser(
@@ -68,6 +87,15 @@ export class UsersController {
       muteUserDto.targetId,
       muteUserDto.reason,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/blocks/:targetId')
+  unblockUser(
+    @Param('targetId') targetId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.usersService.unblockUser(user.id, +targetId);
   }
 
   @UseGuards(JwtAuthGuard)
