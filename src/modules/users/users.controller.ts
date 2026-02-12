@@ -53,7 +53,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id/muted')
+  @Get('me/muted')
   getMutedUsers(@Param('id') id: string) {
     return this.usersService.getMutedUsers(+id);
   }
@@ -80,13 +80,13 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post(':id/mute')
-  muteUser(@Param('id') id: string, @Body() muteUserDto: MuteUserDto) {
-    return this.usersService.muteUser(
-      +id,
-      muteUserDto.targetId,
-      muteUserDto.reason,
-    );
+  @Post('me/mute/:targetId')
+  muteUser(
+    @Param('targetId') targetId: string,
+    @Body() muteUserDto: MuteUserDto,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.usersService.muteUser(user.id, +targetId, muteUserDto.reason);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -99,8 +99,11 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':id/mute/:targetId')
-  unmuteUser(@Param('id') id: string, @Param('targetId') targetId: string) {
-    return this.usersService.unmuteUser(+id, +targetId);
+  @Delete('me/mute/:targetId')
+  unmuteUser(
+    @Param('targetId') targetId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.usersService.unmuteUser(user.id, +targetId);
   }
 }
