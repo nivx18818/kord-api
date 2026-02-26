@@ -1,4 +1,4 @@
-import { UseFilters } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
@@ -10,6 +10,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
+import { Message } from 'generated/prisma/client';
 import { Server, Socket } from 'socket.io';
 
 import { ErrorCode } from '@/common/constants/error-codes';
@@ -17,6 +18,7 @@ import { WsExceptionFilter } from '@/common/filters/ws-exception.filter';
 
 import type { AuthenticatedSocket } from './types/socket-data.type';
 
+import { UsersService } from '../users/users.service';
 import { extractTokenFromSocket } from './utils/ws-cookie-extractor';
 
 interface JoinChannelPayload {
@@ -29,7 +31,7 @@ interface LeaveChannelPayload {
 
 interface MessageCreatedPayload {
   channelId: number;
-  message: unknown;
+  message: Message;
 }
 
 interface TypingPayload {
@@ -51,14 +53,69 @@ export class MessagesGateway
   @WebSocketServer()
   server: Server;
 
+  private readonly logger = new Logger(MessagesGateway.name);
   private typingTimeouts = new Map<string, NodeJS.Timeout>();
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
+  ) {}
 
   // Called by MessagesService when a new message is created
-  broadcastMessageCreated(payload: MessageCreatedPayload) {
+  async broadcastMessageCreated(payload: MessageCreatedPayload) {
     const room = `channel-${payload.channelId}`;
-    this.server.to(room).emit('message-created', payload.message);
+
+    try {
+      // Get message author ID from payload
+      const messageAuthorId = payload.message.userId;
+
+      // Get all sockets in the room
+      const sockets = await this.server.in(room).fetchSockets();
+      const connectedUserIds = sockets
+        .map((s) => (s.data as AuthenticatedSocket['data'])?.user?.id)
+        .filter((id): id is number => id !== undefined);
+
+      // Build a map of userId -> Set of blocked user IDs to avoid N+1 queries
+      const blockCache = new Map<number, Set<number>>();
+
+      await Promise.all(
+        connectedUserIds.map(async (userId) => {
+          const blockedUserIds =
+            await this.usersService.getBlockedUserIds(userId);
+          blockCache.set(userId, new Set(blockedUserIds));
+        }),
+      );
+
+      // Emit customized payload to each socket based on their block list
+      for (const socket of sockets) {
+        const socketData = socket.data as AuthenticatedSocket['data'];
+        const userId = socketData?.user?.id;
+
+        if (!userId) {
+          // If we can't determine user, send message with isBlocked: false
+          socket.emit('message-created', {
+            ...payload.message,
+            isBlocked: false,
+          });
+          continue;
+        }
+
+        const blockedUserIds = blockCache.get(userId);
+        const isBlocked = blockedUserIds?.has(messageAuthorId) ?? false;
+
+        socket.emit('message-created', {
+          ...payload.message,
+          isBlocked,
+        });
+      }
+    } catch (error) {
+      // Fallback to room broadcast if channel lookup fails
+      this.logger.error('Error in broadcastMessageCreated:', error);
+      this.server.to(room).emit('message-created', {
+        ...payload.message,
+        isBlocked: false,
+      });
+    }
   }
 
   // Called by MessagesService when a message is deleted

@@ -92,7 +92,7 @@ export class MessagesService {
       });
 
       // Broadcast the new message to all clients in the channel
-      this.messagesGateway.broadcastMessageCreated({
+      await this.messagesGateway.broadcastMessageCreated({
         channelId: message.channelId,
         message,
       });
