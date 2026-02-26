@@ -49,12 +49,6 @@ export class MessagesController {
     );
   }
 
-  @Get(':messageId')
-  @RequiredPermissions(Permission.VIEW_CHANNELS)
-  findOne(@Param('messageId') messageId: string) {
-    return this.messagesService.findOne(+messageId);
-  }
-
   @Patch(':messageId')
   update(
     @Param('messageId') messageId: string,
