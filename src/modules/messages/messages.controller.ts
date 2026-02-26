@@ -38,10 +38,12 @@ export class MessagesController {
   @Get()
   @RequiredPermissions(Permission.VIEW_CHANNELS)
   findAll(
+    @CurrentUser() user: RequestUser,
     @Query('channelId') channelId?: string,
     @Query() pagination?: MessagePaginationDto,
   ) {
     return this.messagesService.findAll(
+      user.id,
       channelId ? +channelId : undefined,
       pagination,
     );

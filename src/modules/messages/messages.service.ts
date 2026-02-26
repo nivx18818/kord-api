@@ -116,7 +116,14 @@ export class MessagesService {
     }
   }
 
-  async findAll(channelId?: number, pagination?: MessagePaginationDto) {
+  async findAll(
+    requestingUserId: number,
+    channelId?: number,
+    pagination?: MessagePaginationDto,
+  ) {
+    const blockedUserIds =
+      await this.usersService.getBlockedUserIds(requestingUserId);
+
     const limit = pagination?.limit ?? 50;
     const after = pagination?.after ? new Date(pagination.after) : undefined;
     const before = pagination?.before ? new Date(pagination.before) : undefined;
@@ -146,6 +153,11 @@ export class MessagesService {
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, limit) : messages;
 
+    const processedItems = items.map((item) => ({
+      ...item,
+      isBlocked: blockedUserIds.includes(item.userId),
+    }));
+
     const newAfter =
       items.length > 0
         ? items[items.length - 1]?.createdAt?.toISOString()
@@ -154,7 +166,7 @@ export class MessagesService {
       items.length > 0 ? items[0]?.createdAt?.toISOString() : undefined;
 
     return buildCursorPaginatedResponse<Message>(
-      items,
+      processedItems,
       limit,
       hasMore,
       newBefore,
