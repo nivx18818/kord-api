@@ -20,11 +20,8 @@ export enum ErrorCode {
   USER_ALREADY_MUTED = 40011,
   MUTE_NOT_FOUND = 40012,
   USER_ALREADY_PARTICIPANT = 40013,
-  CAN_ONLY_BLOCK_DM_CHANNELS = 40014,
-  DM_ALREADY_BLOCKED = 40015,
-  DM_BLOCK_NOT_FOUND = 40016,
-  CANNOT_BLOCK_SELF = 40017,
-  USER_ALREADY_BLOCKED = 40018,
+  CANNOT_BLOCK_SELF = 40014,
+  USER_ALREADY_BLOCKED = 40015,
   // 401 - Unauthorized
   UNAUTHORIZED = 40100,
   INVALID_ACCESS_TOKEN = 40101,
@@ -96,9 +93,6 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.USER_ALREADY_MUTED]: 'User is already muted',
   [ErrorCode.MUTE_NOT_FOUND]: 'Mute not found',
   [ErrorCode.USER_ALREADY_PARTICIPANT]: 'User is already a participant',
-  [ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS]: 'Can only block DM channels',
-  [ErrorCode.DM_ALREADY_BLOCKED]: 'DM is already blocked',
-  [ErrorCode.DM_BLOCK_NOT_FOUND]: 'DM block not found',
   [ErrorCode.CANNOT_BLOCK_SELF]: 'Cannot block yourself',
   [ErrorCode.USER_ALREADY_BLOCKED]: 'User is already blocked',
   // 401 - Unauthorized

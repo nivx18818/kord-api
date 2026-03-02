@@ -161,33 +161,6 @@ export class UserAlreadyParticipantException extends BadRequestException {
   }
 }
 
-export class CanOnlyBlockDMChannelsException extends BadRequestException {
-  constructor() {
-    super({
-      code: ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS,
-      message: getErrorMessage(ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS),
-    });
-  }
-}
-
-export class DMAlreadyBlockedException extends BadRequestException {
-  constructor() {
-    super({
-      code: ErrorCode.DM_ALREADY_BLOCKED,
-      message: getErrorMessage(ErrorCode.DM_ALREADY_BLOCKED),
-    });
-  }
-}
-
-export class DMBlockNotFoundException extends BadRequestException {
-  constructor() {
-    super({
-      code: ErrorCode.DM_BLOCK_NOT_FOUND,
-      message: getErrorMessage(ErrorCode.DM_BLOCK_NOT_FOUND),
-    });
-  }
-}
-
 export class CannotBlockSelfException extends BadRequestException {
   constructor() {
     super({

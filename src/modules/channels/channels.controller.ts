@@ -97,20 +97,4 @@ export class ChannelsController {
       addParticipantDto.userId,
     );
   }
-
-  @Post(':channelId/block')
-  blockDM(
-    @Param('channelId') channelId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.channelsService.blockDM(+channelId, user.id);
-  }
-
-  @Delete(':channelId/block')
-  unblockDM(
-    @Param('channelId') channelId: string,
-    @CurrentUser() user: RequestUser,
-  ) {
-    return this.channelsService.unblockDM(+channelId, user.id);
-  }
 }

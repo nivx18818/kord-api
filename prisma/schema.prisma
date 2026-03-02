@@ -26,7 +26,6 @@ model User {
   invites            Invite[]
   mutedBy            UserMute[]           @relation("MutedBy")
   mutedUsers         UserMute[]           @relation("MutedUsers")
-  channelBlocks      ChannelBlock[]
   channelParticipant ChannelParticipant[]
   blockedBy          UserBlock[]          @relation("BlockedBy")
   blockedUsers       UserBlock[]          @relation("BlockedUsers")
@@ -99,7 +98,6 @@ model Channel {
   serverId      Int?                 @map("server_id")
   server        Server?              @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages      Message[]
-  channelBlocks ChannelBlock[]
   participants  ChannelParticipant[]
 
   @@index([isDM, createdAt, serverId])
@@ -238,21 +236,6 @@ model UserBlock {
   @@map("user_blocks")
 }
 
-model ChannelBlock {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  userId    Int     @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channelId Int     @map("channel_id")
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, channelId])
-  @@index([userId])
-  @@index([channelId])
-  @@map("channel_blocks")
-}
 
 model ChannelParticipant {
   createdAt DateTime @default(now()) @map("created_at")

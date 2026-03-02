@@ -56,7 +56,7 @@ These are broken into phases from the plans. Focus on one phase at a time for si
 - [x] Add global error handling (interceptor for 401/403).
 - [x] Add invites/joining servers: Endpoint to create invite links (e.g., `POST /servers/:id/invites`) and redeem them (e.g., `POST /invites/:code/join`) for public/restricted servers.
 - [x] Add typing indicators: WebSocket event `user.typing` per channel (emit on keypress, clear after timeout).
-- [x] Add muting/blocking: New models (e.g., `UserMute` for muted users, `ChannelBlock` for blocked DMs); endpoints to mute/block (`POST /users/:id/mute`, `POST /channels/:id/block` for DMs).
+- [x] Add muting/blocking: New models (e.g., `UserMute` for muted users, `UserBlock` for user-level blocking); endpoints to mute/block users (`POST /me/mutes/:id`, `POST /me/blocks/:id`).
 
 **Phase 2.5: Response Structure & Error Handling**
 

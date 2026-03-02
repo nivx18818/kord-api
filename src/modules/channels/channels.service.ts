@@ -6,11 +6,8 @@ import {
 
 import {
   CannotCreateDMWithBlockedUserException,
-  CanOnlyBlockDMChannelsException,
   ChannelNotFoundException,
   ChannelParticipantNotFoundException,
-  DMAlreadyBlockedException,
-  DMBlockNotFoundException,
   ServerNotFoundException,
   UserAlreadyParticipantException,
 } from '@/common/exceptions/kord.exceptions';
@@ -163,15 +160,6 @@ export class ChannelsService {
     });
   }
 
-  async getBlockedDMs(userId: number) {
-    return await this.prisma.channelBlock.findMany({
-      include: {
-        channel: true,
-      },
-      where: { userId },
-    });
-  }
-
   async getUserDMs(userId: number) {
     return await this.prisma.channel.findMany({
       include: this.includeOptions,
@@ -266,50 +254,5 @@ export class ChannelsService {
       }
       throw error;
     }
-  }
-
-  async blockDM(channelId: number, userId: number) {
-    const channel = await this.prisma.channel.findUnique({
-      where: { id: channelId },
-    });
-
-    if (!channel) {
-      throw new ChannelNotFoundException(channelId);
-    }
-
-    if (!channel.isDM) {
-      throw new CanOnlyBlockDMChannelsException();
-    }
-
-    try {
-      return await this.prisma.channelBlock.create({
-        data: {
-          channelId,
-          userId,
-        },
-      });
-    } catch (error) {
-      if (
-        error instanceof PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new DMAlreadyBlockedException();
-      }
-      throw error;
-    }
-  }
-
-  async unblockDM(channelId: number, userId: number) {
-    const block = await this.prisma.channelBlock.findFirst({
-      where: { channelId, userId },
-    });
-
-    if (!block) {
-      throw new DMBlockNotFoundException();
-    }
-
-    return await this.prisma.channelBlock.delete({
-      where: { id: block.id },
-    });
   }
 }

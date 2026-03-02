@@ -102,8 +102,8 @@ ServersS --> User: joined server
 == Mute / Block ==
 User -> UsersS: POST /users/:id/mute
 UsersS -> Prisma: userMute.create(userId, targetId)
-User -> ChannelsS: POST /channels/:id/block (DM)
-ChannelsS -> Prisma: channelBlock.create(userId, channelId)
+User -> UsersS: POST /me/blocks/:targetId
+UsersS -> Prisma: userBlock.create(userId, blockedUserId)
 
 ' === AUTHORIZATION ===
 == Role Checks ==
