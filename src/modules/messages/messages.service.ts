@@ -12,6 +12,7 @@ import {
 import {
   CannotDeleteOthersMessagesException,
   CannotEditOthersMessagesException,
+  CannotMessageBlockedUserException,
   ChannelNotFoundException,
   ChannelParticipantNotFoundException,
   MessageNotFoundException,
@@ -80,8 +81,7 @@ export class MessagesService {
           otherParticipant.userId,
         )
       ) {
-        // TODO: replace with custom exception - CannotMessageBlockedUserException()
-        throw new Error('Cannot message blocked user');
+        throw new CannotMessageBlockedUserException();
       }
     }
 

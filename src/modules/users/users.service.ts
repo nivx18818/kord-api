@@ -6,10 +6,13 @@ import {
   OffsetPaginationDto,
 } from '@/common/dto/pagination.dto';
 import {
+  CannotBlockSelfException,
   CannotMuteSelfException,
   EmailAlreadyExistsException,
   MuteNotFoundException,
+  UserAlreadyBlockedException,
   UserAlreadyMutedException,
+  UserBlockNotFoundException,
   UsernameAlreadyExistsException,
   UserNotFoundException,
 } from '@/common/exceptions/kord.exceptions';
@@ -207,8 +210,7 @@ export class UsersService {
 
   async blockUser(userId: number, targetId: number) {
     if (userId === targetId) {
-      // TODO: replace with custom exception - CannotBlockSelfException()
-      throw new Error('Cannot block yourself');
+      throw new CannotBlockSelfException();
     }
 
     const [user, target] = await Promise.all([
@@ -235,8 +237,7 @@ export class UsersService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        // TODO: replace with custom exception - UserAlreadyBlockedException()
-        throw new Error('User already blocked');
+        throw new UserAlreadyBlockedException();
       }
       throw error;
     }
@@ -293,8 +294,7 @@ export class UsersService {
     });
 
     if (!block) {
-      // TODO: replace with custom exception - BlockNotFoundException()
-      throw new Error('Block not found');
+      throw new UserBlockNotFoundException();
     }
 
     return await this.prisma.userBlock.delete({

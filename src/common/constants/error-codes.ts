@@ -23,6 +23,8 @@ export enum ErrorCode {
   CAN_ONLY_BLOCK_DM_CHANNELS = 40014,
   DM_ALREADY_BLOCKED = 40015,
   DM_BLOCK_NOT_FOUND = 40016,
+  CANNOT_BLOCK_SELF = 40017,
+  USER_ALREADY_BLOCKED = 40018,
   // 401 - Unauthorized
   UNAUTHORIZED = 40100,
   INVALID_ACCESS_TOKEN = 40101,
@@ -41,6 +43,8 @@ export enum ErrorCode {
   CANNOT_EDIT_OTHERS_MESSAGES = 40308,
   CANNOT_DELETE_OTHERS_MESSAGES = 40309,
   NO_ROLES_ASSIGNED = 40310,
+  CANNOT_MESSAGE_BLOCKED_USER = 40311,
+  CANNOT_CREATE_DM_WITH_BLOCKED_USER = 40312,
   // 404 - Not Found
   NOT_FOUND = 40400,
   USER_NOT_FOUND = 40401,
@@ -54,6 +58,7 @@ export enum ErrorCode {
   INVITE_NOT_FOUND = 40409,
   ROLES_NOT_FOUND = 40410,
   CHANNEL_PARTICIPANT_NOT_FOUND = 40411,
+  USER_BLOCK_NOT_FOUND = 40412,
   // 409 - Conflict
   CONFLICT = 40900,
   EMAIL_ALREADY_EXISTS = 40901,
@@ -94,6 +99,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CAN_ONLY_BLOCK_DM_CHANNELS]: 'Can only block DM channels',
   [ErrorCode.DM_ALREADY_BLOCKED]: 'DM is already blocked',
   [ErrorCode.DM_BLOCK_NOT_FOUND]: 'DM block not found',
+  [ErrorCode.CANNOT_BLOCK_SELF]: 'Cannot block yourself',
+  [ErrorCode.USER_ALREADY_BLOCKED]: 'User is already blocked',
   // 401 - Unauthorized
   [ErrorCode.UNAUTHORIZED]: 'Authentication required',
   [ErrorCode.INVALID_ACCESS_TOKEN]: 'Invalid authentication token',
@@ -114,6 +121,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.CANNOT_DELETE_OTHERS_MESSAGES]:
     'You can only delete your own messages',
   [ErrorCode.NO_ROLES_ASSIGNED]: 'User has no roles assigned',
+  [ErrorCode.CANNOT_MESSAGE_BLOCKED_USER]:
+    'Cannot message user you have blocked',
+  [ErrorCode.CANNOT_CREATE_DM_WITH_BLOCKED_USER]:
+    'Cannot create DM with blocked user',
   // 404 - Not Found
   [ErrorCode.NOT_FOUND]: 'Resource not found',
   [ErrorCode.USER_NOT_FOUND]: 'User not found',
@@ -127,6 +138,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.INVITE_NOT_FOUND]: 'Invite not found',
   [ErrorCode.ROLES_NOT_FOUND]: 'One or more roles not found',
   [ErrorCode.CHANNEL_PARTICIPANT_NOT_FOUND]: 'Channel participant not found',
+  [ErrorCode.USER_BLOCK_NOT_FOUND]: 'User block not found',
   // 409 - Conflict
   [ErrorCode.CONFLICT]: 'The resource is in a conflicting state',
   [ErrorCode.EMAIL_ALREADY_EXISTS]: 'Email already registered',

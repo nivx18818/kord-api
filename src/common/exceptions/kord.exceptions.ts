@@ -188,6 +188,24 @@ export class DMBlockNotFoundException extends BadRequestException {
   }
 }
 
+export class CannotBlockSelfException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_BLOCK_SELF,
+      message: getErrorMessage(ErrorCode.CANNOT_BLOCK_SELF),
+    });
+  }
+}
+
+export class UserAlreadyBlockedException extends BadRequestException {
+  constructor() {
+    super({
+      code: ErrorCode.USER_ALREADY_BLOCKED,
+      message: getErrorMessage(ErrorCode.USER_ALREADY_BLOCKED),
+    });
+  }
+}
+
 // ============================================================================
 // 401 - Unauthorized (Authentication Errors)
 // ============================================================================
@@ -344,6 +362,24 @@ export class NoRolesAssignedException extends ForbiddenException {
   }
 }
 
+export class CannotMessageBlockedUserException extends ForbiddenException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_MESSAGE_BLOCKED_USER,
+      message: getErrorMessage(ErrorCode.CANNOT_MESSAGE_BLOCKED_USER),
+    });
+  }
+}
+
+export class CannotCreateDMWithBlockedUserException extends ForbiddenException {
+  constructor() {
+    super({
+      code: ErrorCode.CANNOT_CREATE_DM_WITH_BLOCKED_USER,
+      message: getErrorMessage(ErrorCode.CANNOT_CREATE_DM_WITH_BLOCKED_USER),
+    });
+  }
+}
+
 // ============================================================================
 // 404 - Not Found
 // ============================================================================
@@ -443,6 +479,15 @@ export class ChannelParticipantNotFoundException extends NotFoundException {
     super({
       code: ErrorCode.CHANNEL_PARTICIPANT_NOT_FOUND,
       message: `${getErrorMessage(ErrorCode.CHANNEL_PARTICIPANT_NOT_FOUND)}: user ${userId} in channel ${channelId}`,
+    });
+  }
+}
+
+export class UserBlockNotFoundException extends NotFoundException {
+  constructor() {
+    super({
+      code: ErrorCode.USER_BLOCK_NOT_FOUND,
+      message: getErrorMessage(ErrorCode.USER_BLOCK_NOT_FOUND),
     });
   }
 }

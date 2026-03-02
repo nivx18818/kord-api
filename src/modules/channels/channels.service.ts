@@ -5,6 +5,7 @@ import {
 } from 'generated/prisma/internal/prismaNamespace';
 
 import {
+  CannotCreateDMWithBlockedUserException,
   CanOnlyBlockDMChannelsException,
   ChannelNotFoundException,
   ChannelParticipantNotFoundException,
@@ -127,8 +128,7 @@ export class ChannelsService {
       );
 
       if (hasBlocked) {
-        // TODO: replace with custom exception - CannotCreateDMWithBlockedUserException()
-        throw new Error('Cannot create DM with blocked user');
+        throw new CannotCreateDMWithBlockedUserException();
       }
     }
 
