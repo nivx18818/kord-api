@@ -15,6 +15,7 @@ import {
 } from '@/common/exceptions/kord.exceptions';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 
@@ -47,7 +48,10 @@ export class ChannelsService {
     server: true,
   };
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async create(createChannelDto: CreateChannelDto) {
     try {
@@ -113,6 +117,18 @@ export class ChannelsService {
         )
       ) {
         return await this.findOne(channel.id);
+      }
+    }
+
+    for (const participantId of otherParticipantIds) {
+      const hasBlocked = await this.usersService.hasUserBlocked(
+        userId,
+        participantId,
+      );
+
+      if (hasBlocked) {
+        // TODO: replace with custom exception - CannotCreateDMWithBlockedUserException()
+        throw new Error('Cannot create DM with blocked user');
       }
     }
 
