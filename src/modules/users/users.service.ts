@@ -236,7 +236,7 @@ export class UsersService {
         error.code === 'P2002'
       ) {
         // TODO: replace with custom exception - UserAlreadyBlockedException()
-        throw new Error();
+        throw new Error('User already blocked');
       }
       throw error;
     }
