@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -95,10 +96,10 @@ model Channel {
   createdAt DateTime? @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  serverId      Int?                 @map("server_id")
-  server        Server?              @relation(fields: [serverId], references: [id], onDelete: Cascade)
-  messages      Message[]
-  participants  ChannelParticipant[]
+  serverId     Int?                 @map("server_id")
+  server       Server?              @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  participants ChannelParticipant[]
 
   @@index([isDM, createdAt, serverId])
   @@map("channels")
@@ -235,7 +236,6 @@ model UserBlock {
   @@index([targetId])
   @@map("user_blocks")
 }
-
 
 model ChannelParticipant {
   createdAt DateTime @default(now()) @map("created_at")
