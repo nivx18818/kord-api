@@ -36,7 +36,7 @@ Guidance for GitHub Copilot when assisting with Kord (NestJS + Prisma, Discord-i
 - `src/app.module.ts` wires the global `PrismaModule` alongside domain modules (`users` today); new verticals adopt the same registration.
 - Domain modules live in `src/modules/<domain>` with controllers delegating to services and DTOs in `dto/`; keep Prisma access inside the service layer.
 - `src/modules/prisma/prisma.module.ts` marks Prisma as a global provider so it only needs to be imported once.
-- `src/modules/prisma/prisma.service.ts` extends `PrismaClient` (via `@prisma/client/extension`) and connects during `onModuleInit`; inject it where data access is required.
+- `src/modules/prisma/prisma.service.ts` extends `PrismaClient` (via `/generated/prisma/client`) and connects during `onModuleInit`; inject it where data access is required.
 - Group NestJS modules by domain (`users`, `servers`, `channels`, `messages`, etc.). Each module should define controllers, services, DTOs, and providers that wrap Prisma queries. Inject shared services (e.g., Prisma) via NestJS dependency injection.
 
 ## Data & Persistence
