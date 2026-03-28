@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { ChannelsModule } from '../channels/channels.module';
+import { RolesModule } from '../roles/roles.module';
 import { UsersModule } from '../users/users.module';
 import { MessagesController } from './messages.controller';
 import { MessagesGateway } from './messages.gateway';
@@ -18,6 +19,7 @@ import { MessagesService } from './messages.service';
     }),
     UsersModule,
     ChannelsModule,
+    RolesModule,
   ],
   providers: [MessagesService, MessagesGateway],
 })
