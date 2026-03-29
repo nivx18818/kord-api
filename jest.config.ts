@@ -1,6 +1,6 @@
 import type { Config } from 'jest';
 
-export const config = {
+export default {
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
   extensionsToTreatAsEsm: ['.ts'],
