@@ -1,0 +1,38 @@
+meta {
+  name: cannot-create-dm-with-blocked
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{base_url}}/channels/dm
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "otherParticipantIds": [{{blockTargetId}}]
+  }
+}
+
+tests {
+  test("Status should be 403 when blocker tries to create a DM with blocked user", function () {
+    // A has blocked B. When A tries to initiate a new DM with B, it should be rejected.
+    // B can still create DMs with A (A just won't see B's messages properly).
+    expect(res.getStatus()).to.equal(403);
+  });
+
+  test("Response should include error code for cannot create DM with blocked user", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('code');
+    expect(body.code).to.equal(40312);
+  });
+
+  test("Response message should indicate DM creation with blocked user is not allowed", function () {
+    const message = res.getBody().message.toLowerCase();
+    expect(message).to.satisfy(function(m) {
+      return m.includes('blocked') || m.includes('cannot create');
+    });
+  });
+}

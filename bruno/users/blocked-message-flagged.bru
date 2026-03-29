@@ -1,0 +1,69 @@
+meta {
+  name: blocked-message-flagged
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{base_url}}/messages?channelId={{dmChannelId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 when fetching messages from the DM channel", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should be a paginated result with items array", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('items');
+    expect(body.items).to.be.an('array');
+  });
+
+  test("Messages from the blocked user (B) should have isBlocked: true", function () {
+    const items = res.getBody().items;
+    const blockTargetId = bru.getVar('blockTargetId');
+
+    // Find messages sent by the blocked user
+    const blockedUserMessages = items.filter(function(m) {
+      return m.userId === blockTargetId;
+    });
+
+    // There should be at least one message from B (sent in blocked-can-message test)
+    expect(blockedUserMessages.length).to.be.greaterThan(0);
+
+    // Every message from B should be flagged
+    blockedUserMessages.forEach(function(m) {
+      expect(m.isBlocked).to.equal(true);
+    });
+  });
+
+  test("Messages from blocked user should still include full content (Discord-style)", function () {
+    const items = res.getBody().items;
+    const blockTargetId = bru.getVar('blockTargetId');
+
+    const blockedUserMessages = items.filter(function(m) {
+      return m.userId === blockTargetId;
+    });
+
+    // Full content should be present (frontend decides to hide/show based on isBlocked flag)
+    blockedUserMessages.forEach(function(m) {
+      expect(m.content).to.not.be.null;
+      expect(m.content).to.not.be.undefined;
+    });
+  });
+
+  test("Messages from other users should not have isBlocked flag set", function () {
+    const items = res.getBody().items;
+    const selfId = bru.getVar('selfId');
+
+    const ownMessages = items.filter(function(m) {
+      return m.userId === selfId;
+    });
+
+    ownMessages.forEach(function(m) {
+      expect(m.isBlocked).to.not.equal(true);
+    });
+  });
+}

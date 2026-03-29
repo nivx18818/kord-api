@@ -1,0 +1,42 @@
+meta {
+  name: get-blocked-users
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{base_url}}/users/me/blocks
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 when fetching blocked users list", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should be an array", function () {
+    expect(res.getBody()).to.be.an('array');
+  });
+
+  test("Blocked list should contain the blocked target user", function () {
+    const blocked = res.getBody();
+    expect(blocked.length).to.be.greaterThan(0);
+    const blockTargetId = bru.getVar('blockTargetId');
+    const found = blocked.some(function(b) {
+      return b.targetId === blockTargetId || (b.target && b.target.id === blockTargetId);
+    });
+    expect(found).to.be.true;
+  });
+
+  test("Each blocked entry should include user details", function () {
+    const blocked = res.getBody();
+    if (blocked.length > 0) {
+      const entry = blocked[0];
+      // Should have either nested target user or targetId
+      expect(entry).to.satisfy(function(e) {
+        return e.targetId !== undefined || (e.target && e.target.id !== undefined);
+      });
+    }
+  });
+}

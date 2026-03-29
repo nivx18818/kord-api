@@ -1,0 +1,67 @@
+meta {
+  name: blocker-cannot-message-1on1
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{base_url}}/messages
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "content": { "text": "Hello, this message should be blocked" },
+    "userId": {{selfId}},
+    "channelId": {{dmChannelId}}
+  }
+}
+
+script:pre-request {
+  // Re-block the target user (was unblocked in unblock-user test)
+  const blockTargetId = bru.getVar('blockTargetId');
+  if (blockTargetId) {
+    await bru.sendRequest({
+      method: 'POST',
+      url: bru.getEnvVar('base_url') + '/users/me/blocks/' + blockTargetId,
+      headers: { 'Content-Type': 'application/json' }
+    }, function(err, res) {
+      if (!err) {
+        console.log('Re-blocked target, status:', res.status);
+      }
+    });
+  }
+
+  // Ensure we have the current user ID
+  if (!bru.getVar('selfId')) {
+    await bru.sendRequest({
+      method: 'GET',
+      url: bru.getEnvVar('base_url') + '/auth/me',
+      headers: { 'Content-Type': 'application/json' }
+    }, function(err, res) {
+      if (!err && res.status === 200) {
+        bru.setVar('selfId', res.data.id);
+      }
+    });
+  }
+}
+
+tests {
+  test("Status should be 403 when blocker tries to message blocked user in 1-on-1 DM", function () {
+    expect(res.getStatus()).to.equal(403);
+  });
+
+  test("Response should include error code for cannot message blocked user", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('code');
+    expect(body.code).to.equal(40311);
+  });
+
+  test("Response message should indicate cannot message blocked user", function () {
+    const message = res.getBody().message.toLowerCase();
+    expect(message).to.satisfy(function(m) {
+      return m.includes('blocked') || m.includes('cannot message');
+    });
+  });
+}

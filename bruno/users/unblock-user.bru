@@ -1,0 +1,25 @@
+meta {
+  name: unblock-user
+  type: http
+  seq: 17
+}
+
+delete {
+  url: {{base_url}}/users/me/blocks/{{blockTargetId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 when unblocking a user", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should confirm the unblock", function () {
+    const body = res.getBody();
+    // Response can be the deleted block record or a success message
+    expect(body).to.satisfy(function(b) {
+      return b.targetId !== undefined || b.message !== undefined || b.userId !== undefined;
+    });
+  });
+}

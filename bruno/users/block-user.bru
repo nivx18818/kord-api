@@ -1,0 +1,65 @@
+meta {
+  name: block-user
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{base_url}}/users/me/blocks/{{blockTargetId}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Create a second user to be the block target (if not already done)
+  await bru.sendRequest({
+    method: 'POST',
+    url: bru.getEnvVar('base_url') + '/users',
+    headers: { 'Content-Type': 'application/json' },
+    data: {
+      name: 'Block Target',
+      username: 'blocktarget_' + Date.now(),
+      email: 'blocktarget_' + Date.now() + '@example.com',
+      password: 'Password123!',
+      dateOfBirth: '1995-06-15'
+    }
+  }, function(err, res) {
+    if (!err && res.status === 201) {
+      bru.setVar('blockTargetId', res.data.id);
+      console.log('Created block target user with ID:', res.data.id);
+    }
+  });
+
+  // Create a 1-on-1 DM channel between the current user and the block target
+  const blockTargetId = bru.getVar('blockTargetId');
+  if (blockTargetId) {
+    await bru.sendRequest({
+      method: 'POST',
+      url: bru.getEnvVar('base_url') + '/channels/dm',
+      headers: { 'Content-Type': 'application/json' },
+      data: { otherParticipantIds: [blockTargetId] }
+    }, function(err, res) {
+      if (!err && (res.status === 200 || res.status === 201)) {
+        bru.setVar('dmChannelId', res.data.id);
+        console.log('Created/found 1-on-1 DM channel with ID:', res.data.id);
+      }
+    });
+  }
+}
+
+tests {
+  test("Status should be 201 when blocking a user", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Response should include block record fields", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('userId');
+    expect(body).to.have.property('targetId');
+    expect(body).to.have.property('createdAt');
+  });
+
+  test("Block target ID should match requested target", function () {
+    expect(res.getBody().targetId).to.equal(bru.getVar('blockTargetId'));
+  });
+}

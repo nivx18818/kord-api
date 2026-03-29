@@ -1,0 +1,92 @@
+meta {
+  name: blocker-can-message-group
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{base_url}}/messages
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "content": { "text": "Hello group! This should succeed even with blocked user present." },
+    "userId": {{selfId}},
+    "channelId": {{groupDMChannelId}}
+  }
+}
+
+script:pre-request {
+  // Create a third user (user C) to form a group DM
+  await bru.sendRequest({
+    method: 'POST',
+    url: bru.getEnvVar('base_url') + '/users',
+    headers: { 'Content-Type': 'application/json' },
+    data: {
+      name: 'User C',
+      username: 'userc_' + Date.now(),
+      email: 'userc_' + Date.now() + '@example.com',
+      password: 'Password123!',
+      dateOfBirth: '1998-03-20'
+    }
+  }, function(err, res) {
+    if (!err && res.status === 201) {
+      bru.setVar('userCId', res.data.id);
+      console.log('Created user C with ID:', res.data.id);
+    }
+  });
+
+  // Create a group DM with current user, block target (B), and user C
+  const blockTargetId = bru.getVar('blockTargetId');
+  const userCId = bru.getVar('userCId');
+  if (blockTargetId && userCId) {
+    await bru.sendRequest({
+      method: 'POST',
+      url: bru.getEnvVar('base_url') + '/channels/dm',
+      headers: { 'Content-Type': 'application/json' },
+      data: { otherParticipantIds: [blockTargetId, userCId] }
+    }, function(err, res) {
+      if (!err && (res.status === 200 || res.status === 201)) {
+        bru.setVar('groupDMChannelId', res.data.id);
+        console.log('Created group DM channel with ID:', res.data.id);
+      }
+    });
+  }
+
+  // Ensure selfId is set
+  if (!bru.getVar('selfId')) {
+    await bru.sendRequest({
+      method: 'GET',
+      url: bru.getEnvVar('base_url') + '/auth/me',
+      headers: { 'Content-Type': 'application/json' }
+    }, function(err, res) {
+      if (!err && res.status === 200) {
+        bru.setVar('selfId', res.data.id);
+      }
+    });
+  }
+}
+
+tests {
+  test("Status should be 201 when blocker sends message in group DM (blocked user present)", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Response should include created message details", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('id');
+    expect(body).to.have.property('channelId');
+    expect(body).to.have.property('userId');
+    expect(body).to.have.property('content');
+  });
+
+  test("Message channel should be the group DM", function () {
+    expect(res.getBody().channelId).to.equal(bru.getVar('groupDMChannelId'));
+  });
+
+  test("Message sender should be the blocker", function () {
+    expect(res.getBody().userId).to.equal(bru.getVar('selfId'));
+  });
+}

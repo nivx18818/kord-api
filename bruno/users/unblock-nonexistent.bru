@@ -1,0 +1,30 @@
+meta {
+  name: unblock-nonexistent
+  type: http
+  seq: 18
+}
+
+delete {
+  url: {{base_url}}/users/me/blocks/{{blockTargetId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 404 when unblocking a user that was not blocked", function () {
+    expect(res.getStatus()).to.equal(404);
+  });
+
+  test("Response should include error code for block not found", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('code');
+    expect(body.code).to.equal(40412);
+  });
+
+  test("Response message should indicate block not found", function () {
+    const message = res.getBody().message.toLowerCase();
+    expect(message).to.satisfy(function(m) {
+      return m.includes('not found') || m.includes('block');
+    });
+  });
+}

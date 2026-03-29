@@ -1,0 +1,47 @@
+meta {
+  name: blocked-can-message
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{base_url}}/messages
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "content": { "text": "Hi! I don't know you blocked me, so I can still message you." },
+    "userId": {{blockTargetId}},
+    "channelId": {{dmChannelId}}
+  }
+}
+
+tests {
+  test("Status should be 201 when blocked user (B) sends message to blocker (A) in 1-on-1 DM", function () {
+    // B can still send messages to A even though A blocked B.
+    // B has no indication of being blocked - the message goes through.
+    // A will see the message flagged with isBlocked: true when fetching.
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("Response should include created message details", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('id');
+    expect(body).to.have.property('channelId');
+    expect(body).to.have.property('userId');
+    expect(body).to.have.property('content');
+  });
+
+  test("Message sender should be the blocked user (B)", function () {
+    expect(res.getBody().userId).to.equal(bru.getVar('blockTargetId'));
+  });
+
+  test("Message should not expose isBlocked flag in the create response", function () {
+    // isBlocked filtering happens on read (GET /messages) where the requesting user is checked
+    // The creation response itself does not apply block filtering
+    const body = res.getBody();
+    expect(body.isBlocked).to.be.undefined;
+  });
+}

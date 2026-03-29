@@ -1,0 +1,41 @@
+meta {
+  name: block-self
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{base_url}}/users/me/blocks/{{selfId}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Retrieve the current authenticated user's ID to attempt self-block
+  await bru.sendRequest({
+    method: 'GET',
+    url: bru.getEnvVar('base_url') + '/auth/me',
+    headers: { 'Content-Type': 'application/json' }
+  }, function(err, res) {
+    if (!err && res.status === 200) {
+      bru.setVar('selfId', res.data.id);
+      console.log('Self ID for block attempt:', res.data.id);
+    }
+  });
+}
+
+tests {
+  test("Status should be 400 when trying to block yourself", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Response should include error code for blocking self", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('code');
+    expect(body.code).to.equal(40014);
+  });
+
+  test("Response message should indicate cannot block self", function () {
+    expect(res.getBody().message).to.include('yourself');
+  });
+}

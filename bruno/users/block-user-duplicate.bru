@@ -1,0 +1,27 @@
+meta {
+  name: block-user-duplicate
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{base_url}}/users/me/blocks/{{blockTargetId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 400 when blocking an already-blocked user", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Response should include error code for already-blocked user", function () {
+    const body = res.getBody();
+    expect(body).to.have.property('code');
+    expect(body.code).to.equal(40015);
+  });
+
+  test("Response should include descriptive error message", function () {
+    expect(res.getBody().message).to.include('already blocked');
+  });
+}
