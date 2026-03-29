@@ -1,17 +1,8 @@
 {
   "name": "kord-api",
-  "version": "0.0.1",
-  "description": "Kord",
-  "author": "NguyenXuanVinh",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nivx18818/kord-api.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nivx18818/kord-api/issues"
-  },
-  "homepage": "https://github.com/nivx18818/kord-api#readme",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
